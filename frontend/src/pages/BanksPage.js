@@ -89,7 +89,7 @@ export default function BanksPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="font-display text-xl font-semibold">Banks</h1>
+        <h1 className="font-display text-xl font-semibold arch-underline">Banks</h1>
         <p className="text-sm text-muted-foreground">Bank master with home store — request a missing bank without losing your draft</p>
       </div>
 

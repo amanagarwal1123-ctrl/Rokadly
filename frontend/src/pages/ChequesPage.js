@@ -55,7 +55,7 @@ export default function ChequesPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="font-display text-xl font-semibold">Cheque ledger</h1>
+          <h1 className="font-display text-xl font-semibold arch-underline">Cheque ledger</h1>
           <p className="text-sm text-muted-foreground">Bounced cheques are recorded here only — receivables stay in MMI</p>
         </div>
         <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search cheque no / name / bill…" className="h-9 w-[240px]" data-testid="cheque-search-input" />

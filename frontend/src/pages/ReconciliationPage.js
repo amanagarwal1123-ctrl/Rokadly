@@ -55,7 +55,7 @@ export default function ReconciliationPage() {
 
   if (!data) return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between"><h1 className="font-display text-xl font-semibold">Reconciliation</h1><StoreDatePicker /></div>
+      <div className="flex items-center justify-between"><h1 className="font-display text-xl font-semibold arch-underline">Reconciliation</h1><StoreDatePicker /></div>
       <EmptyState icon={GitCompareArrows} title="No reconciliation access or no data" />
     </div>
   );
@@ -66,7 +66,7 @@ export default function ReconciliationPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="font-display text-xl font-semibold">Non-cash reconciliation</h1>
+          <h1 className="font-display text-xl font-semibold arch-underline">Non-cash reconciliation</h1>
           <p className="text-sm text-muted-foreground">Continuous serials — Card, Cheque, Banks in configured order, Other</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">

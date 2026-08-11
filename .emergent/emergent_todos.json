@@ -1,30 +1,26 @@
 [
   {
-    "content": "Phase 1: Build backend core (models, RBAC, bills, cash, recon, finalize, seed)",
+    "content": "Replace diamond jaali with curved ogee trellis (body + shell) and fish-scale lattice (cards) — curves only",
     "status": "completed"
   },
   {
-    "content": "Phase 1: POC test_core.py — 46/46 passed",
+    "content": "Verify curved textures on dashboard via screenshot",
     "status": "completed"
   },
   {
-    "content": "Phase 2: Design guidelines via design_agent",
+    "content": "Phase 5B: extra-ornate login page (Mughal arch framing, paisley, curved ornament)",
     "status": "completed"
   },
   {
-    "content": "Phase 2: Frontend — all role dashboards, bill entry, recon, finalize, register, print",
+    "content": "Phase 5B: parchment on-screen print previews (keep @media print white)",
     "status": "completed"
   },
   {
-    "content": "Phase 2: All user stories covered in development and testing",
+    "content": "Phase 5B: app-wide visual sweep across all routes (screenshots per role)",
     "status": "completed"
   },
   {
-    "content": "Phase 2: End-to-end testing via testing_agent_v3 (backend 34/34, frontend 47/48, 1 false positive verified)",
-    "status": "completed"
-  },
-  {
-    "content": "Re-seed clean demo data before delivery",
+    "content": "Frontend regression test pass via testing agent",
     "status": "completed"
   }
 ]

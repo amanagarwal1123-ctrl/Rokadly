@@ -32,13 +32,13 @@ export const MoneyInput = ({ value, onChange, placeholder = "0", testId, classNa
 
 const STATUS_STYLES = {
   pending: "bg-[hsl(var(--danger))] text-[hsl(var(--danger-foreground))]",
-  unreviewed: "bg-[hsl(var(--warning))]/15 text-[hsl(28_80%_30%)] border border-[hsl(var(--warning))]/40",
+  unreviewed: "bg-[hsl(var(--warning))]/15 text-[hsl(var(--warning))] border border-[hsl(var(--warning))]/40",
   matched: "bg-[hsl(var(--success))] text-[hsl(var(--success-foreground))]",
   cleared: "bg-[hsl(var(--success))]/15 text-[hsl(var(--success))] border border-[hsl(var(--success))]/40",
   exception_approved: "bg-[hsl(var(--info))]/15 text-[hsl(var(--info))] border border-[hsl(var(--info))]/40",
   finally_tallied: "bg-[hsl(var(--success))] text-[hsl(var(--success-foreground))]",
   open: "bg-[hsl(var(--danger))]/12 text-[hsl(var(--danger))] border border-[hsl(var(--danger))]/40",
-  partially_adjusted: "bg-[hsl(var(--warning))]/15 text-[hsl(28_80%_30%)] border border-[hsl(var(--warning))]/40",
+  partially_adjusted: "bg-[hsl(var(--warning))]/15 text-[hsl(var(--warning))] border border-[hsl(var(--warning))]/40",
   adjusted: "bg-[hsl(var(--success))]/15 text-[hsl(var(--success))] border border-[hsl(var(--success))]/40",
   closed_unexplained: "bg-muted text-muted-foreground border",
   passed: "bg-[hsl(var(--success))] text-[hsl(var(--success-foreground))]",
@@ -47,7 +47,7 @@ const STATUS_STYLES = {
   active: "bg-[hsl(var(--success))]/15 text-[hsl(var(--success))] border border-[hsl(var(--success))]/40",
   void: "bg-muted text-muted-foreground border line-through",
   finalized: "bg-[hsl(var(--success))] text-[hsl(var(--success-foreground))]",
-  "open-day": "bg-[hsl(var(--warning))]/15 text-[hsl(28_80%_30%)] border border-[hsl(var(--warning))]/40",
+  "open-day": "bg-[hsl(var(--warning))]/15 text-[hsl(var(--warning))] border border-[hsl(var(--warning))]/40",
   reviewed: "bg-[hsl(var(--info))]/15 text-[hsl(var(--info))] border border-[hsl(var(--info))]/40",
 };
 

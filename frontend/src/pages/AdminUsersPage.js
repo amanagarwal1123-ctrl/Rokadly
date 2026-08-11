@@ -107,7 +107,7 @@ export default function AdminUsersPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="font-display text-xl font-semibold">Users &amp; permissions</h1>
+          <h1 className="font-display text-xl font-semibold arch-underline">Users &amp; permissions</h1>
           <p className="text-sm text-muted-foreground">Cashier store assignment, accountant/manager stores, per-store manager permission checklist</p>
         </div>
         <Button onClick={() => setCreateOpen(true)} data-testid="create-user-button"><Plus className="h-4 w-4 mr-1" />New user</Button>

@@ -52,7 +52,7 @@ export default function RegisterPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="font-display text-xl font-semibold">Daily Rokad register</h1>
+          <h1 className="font-display text-xl font-semibold arch-underline">Daily Rokad register</h1>
           <p className="text-sm text-muted-foreground">Verified days carry a green tick</p>
         </div>
         <div className="flex items-end gap-2 flex-wrap">

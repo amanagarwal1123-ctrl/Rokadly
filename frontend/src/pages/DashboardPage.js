@@ -32,8 +32,8 @@ const CashierDash = () => {
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="font-display text-xl font-semibold">Namaste, {user.name.split(" ")[0]}</h1>
-          <p className="text-sm text-muted-foreground">Business date <span className="font-mono-num">{today}</span></p>
+          <h1 className="font-display text-xl font-semibold arch-underline">Namaste, {user.name.split(" ")[0]}</h1>
+          <p className="text-sm text-muted-foreground mt-1">Business date <span className="font-mono-num">{today}</span></p>
         </div>
         <div className="flex gap-2">
           <Button asChild className="bg-[hsl(var(--ruby))] hover:bg-[hsl(var(--ruby))]/90" data-testid="dash-new-bill-button">
@@ -52,7 +52,7 @@ const CashierDash = () => {
         <CardContent className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
           <div>
             <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Expected cash with you</p>
-            <p className="text-2xl font-semibold"><Money paise={s.expected_cash_paise} /></p>
+            <p className="text-2xl font-semibold glow-sapphire"><Money paise={s.expected_cash_paise} /></p>
             <p className="text-[11px] text-muted-foreground">Opening <Money paise={s.opening_allocation_paise} /></p>
           </div>
           <div>
@@ -82,7 +82,7 @@ const CashierDash = () => {
           { to: "/expenses", label: "Expenses", icon: FileText },
           { to: "/discrepancies", label: "Discrepancies", icon: GitCompareArrows },
         ].map((q) => (
-          <Link key={q.to} to={q.to} className="flex items-center gap-2 rounded-lg border bg-card p-3 text-sm font-medium hover:border-[hsl(var(--brass))] transition-colors duration-150" data-testid={`quick-${q.label.toLowerCase().replace(/[^a-z]+/g, "-")}`}>
+          <Link key={q.to} to={q.to} className="flex items-center gap-2 rounded-lg border border-[hsl(var(--border)/0.4)] bg-card card-zardozi p-3 text-sm font-medium hover:border-[hsl(var(--brass))] transition-colors duration-150" data-testid={`quick-${q.label.toLowerCase().replace(/[^a-z]+/g, "-")}`}>
             <q.icon className="h-4 w-4 text-muted-foreground" />{q.label}
           </Link>
         ))}
@@ -113,7 +113,7 @@ const AccountantDash = () => {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h1 className="font-display text-xl font-semibold">Reconciliation work queue</h1>
+        <h1 className="font-display text-xl font-semibold arch-underline">Reconciliation work queue</h1>
         <StoreDatePicker hideStore />
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -150,7 +150,7 @@ const ManagerAdminDash = () => {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h1 className="font-display text-xl font-semibold">{user.role === "admin" ? "Store overview" : "Store readiness"}</h1>
+        <h1 className="font-display text-xl font-semibold arch-underline">{user.role === "admin" ? "Store overview" : "Store readiness"}</h1>
         <div className="flex items-center gap-2">
           <StoreDatePicker />
           {user.role === "admin" && (

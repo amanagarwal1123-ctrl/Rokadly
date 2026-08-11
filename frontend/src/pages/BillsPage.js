@@ -197,7 +197,7 @@ export default function BillsPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="font-display text-xl font-semibold">Bill entry</h1>
+          <h1 className="font-display text-xl font-semibold arch-underline">Bill entry</h1>
           <p className="text-sm text-muted-foreground">MMI bill number + payment breakup</p>
         </div>
         {isAdmin && <StoreDatePicker />}
@@ -346,7 +346,7 @@ export default function BillsPage() {
             {/* Less taken */}
             {amountP > 0 && lessP > 0 && (
               <div className="rounded border border-[hsl(var(--warning))]/50 bg-[hsl(var(--warning))]/8 p-3 space-y-2" data-testid="less-taken-section">
-                <p className="text-sm font-semibold">Less Taken: <Money paise={lessP} className="text-[hsl(28_80%_30%)]" /></p>
+                <p className="text-sm font-semibold">Less Taken: <Money paise={lessP} className="text-[hsl(var(--warning))]" /></p>
                 <Input value={active.less_reason} onChange={(e) => patchActive({ less_reason: e.target.value })}
                   placeholder="Reason (optional — can skip)" className="h-10" data-testid="less-taken-reason-input" />
               </div>
@@ -391,7 +391,7 @@ export default function BillsPage() {
             <div className="space-y-1 text-sm">
               <div className="flex justify-between"><span>Bill amount</span><Money paise={amountP} /></div>
               <div className="flex justify-between"><span>Gross received</span><Money paise={paidP} /></div>
-              {lessP > 0 && <div className="flex justify-between text-[hsl(28_80%_30%)]"><span>Less Taken</span><Money paise={lessP} /></div>}
+              {lessP > 0 && <div className="flex justify-between text-[hsl(var(--warning))]"><span>Less Taken</span><Money paise={lessP} /></div>}
               {excessP > 0 && <div className="flex justify-between text-[hsl(var(--danger))]"><span>Excess to return</span><Money paise={excessP} /></div>}
               <div className="flex justify-between font-semibold border-t pt-1.5">
                 <span>Net settlement</span><Money paise={Math.min(paidP, amountP)} />

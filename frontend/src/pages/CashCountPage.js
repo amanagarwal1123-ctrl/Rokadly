@@ -85,7 +85,7 @@ export default function CashCountPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="font-display text-xl font-semibold">Closing cash count</h1>
+          <h1 className="font-display text-xl font-semibold arch-underline">Closing cash count</h1>
           <p className="text-sm text-muted-foreground">Count the physical cash with you and submit</p>
         </div>
         <div className="flex items-center gap-2">
@@ -168,7 +168,7 @@ export default function CashCountPage() {
               {allCounts.missing.map((m) => (
                 <TableRow key={m.cashier_id} className="bg-[hsl(var(--warning))]/8">
                   <TableCell className="font-medium">{m.name}</TableCell>
-                  <TableCell colSpan={4} className="text-xs text-[hsl(28_80%_30%)] font-semibold">Count not submitted yet</TableCell>
+                  <TableCell colSpan={4} className="text-xs text-[hsl(var(--warning))] font-semibold">Count not submitted yet</TableCell>
                 </TableRow>
               ))}
             </TableBody>

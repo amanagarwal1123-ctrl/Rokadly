@@ -75,7 +75,7 @@ export default function AdjustmentsPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="font-display text-xl font-semibold">Other receipts &amp; adjustments</h1>
+          <h1 className="font-display text-xl font-semibold arch-underline">Other receipts &amp; adjustments</h1>
           <p className="text-sm text-muted-foreground">Tax, hallmarking, cashback, standalone Less Taken and deductions</p>
         </div>
         <StoreDatePicker />

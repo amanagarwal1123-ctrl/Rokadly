@@ -70,9 +70,9 @@ export default function Layout({ children }) {
   const [open, setOpen] = useState(false);
   if (!user) return null;
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex fixed inset-y-0 left-0 w-[240px] flex-col shell-texture no-print">
+      <aside className="hidden lg:flex fixed inset-y-0 left-0 w-[240px] flex-col shell-texture no-print border-r border-[hsl(var(--brass)/0.2)]">
         <Brand />
         <NavItems role={user.role} />
         <div className="border-t border-white/10 p-3">
@@ -89,7 +89,7 @@ export default function Layout({ children }) {
       </aside>
 
       {/* Mobile top bar */}
-      <header className="lg:hidden sticky top-0 z-40 shell-texture no-print">
+      <header className="lg:hidden sticky top-0 z-40 shell-texture no-print border-b border-[hsl(var(--brass)/0.2)]">
         <div className="flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-2">
             <Sheet open={open} onOpenChange={setOpen}>

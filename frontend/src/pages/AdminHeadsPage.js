@@ -41,7 +41,7 @@ export default function AdminHeadsPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="font-display text-xl font-semibold">Heads</h1>
+        <h1 className="font-display text-xl font-semibold arch-underline">Heads</h1>
         <p className="text-sm text-muted-foreground">Expense and adjustment heads — deactivation never damages history</p>
       </div>
       <Tabs value={kind} onValueChange={setKind}>

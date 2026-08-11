@@ -20,8 +20,8 @@ export default function PrintCashPage() {
   const closing = data.opening_paise + data.total_in_paise - data.total_out_paise;
 
   return (
-    <div className="bg-white min-h-screen text-black">
-      <div className="no-print flex items-center justify-between p-4 border-b bg-secondary/50">
+    <div className="print-preview min-h-screen text-black">
+      <div className="no-print flex items-center justify-between p-4 border-b border-[hsl(var(--brass-dim)/0.5)] bg-[hsl(var(--ink))] text-[hsl(38_28%_92%)]">
         <Button asChild variant="ghost" size="sm"><Link to="/reconciliation"><ArrowLeft className="h-4 w-4 mr-1" />Back</Link></Button>
         <Button onClick={() => window.print()} data-testid="print-cash-trigger-button"><Printer className="h-4 w-4 mr-1.5" />Print / Save PDF</Button>
       </div>

@@ -30,7 +30,7 @@ export default function AuditLogPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="font-display text-xl font-semibold">Audit log</h1>
+          <h1 className="font-display text-xl font-semibold arch-underline">Audit log</h1>
           <p className="text-sm text-muted-foreground">Append-only history of every change with actor, before/after and reason</p>
         </div>
         <div className="flex gap-2 flex-wrap">

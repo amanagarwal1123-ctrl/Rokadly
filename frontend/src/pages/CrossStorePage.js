@@ -27,7 +27,7 @@ export default function CrossStorePage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="font-display text-xl font-semibold">Account-centric cross-store receipts</h1>
+          <h1 className="font-display text-xl font-semibold arch-underline">Account-centric cross-store receipts</h1>
           <p className="text-sm text-muted-foreground">Every store's receipts appearing in the same physical bank statement. Ownership never moves.</p>
         </div>
         <div className="flex items-end gap-2">

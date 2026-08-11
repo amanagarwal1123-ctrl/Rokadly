@@ -75,7 +75,7 @@ export default function AllocationPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="font-display text-xl font-semibold">Opening cash allocation</h1>
+          <h1 className="font-display text-xl font-semibold arch-underline">Opening cash allocation</h1>
           <p className="text-sm text-muted-foreground">Distribute the store opening among cashiers — zero is valid</p>
         </div>
         <StoreDatePicker />

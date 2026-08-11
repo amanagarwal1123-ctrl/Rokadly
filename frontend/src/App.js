@@ -30,7 +30,7 @@ const Protected = ({ children, roles }) => {
   const location = useLocation();
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-muted-foreground text-sm animate-pulse">Loading Rokadly…</div>
       </div>
     );

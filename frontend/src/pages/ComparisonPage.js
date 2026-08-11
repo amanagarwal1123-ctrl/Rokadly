@@ -41,7 +41,7 @@ export default function ComparisonPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="font-display text-xl font-semibold">Store comparison</h1>
+          <h1 className="font-display text-xl font-semibold arch-underline">Store comparison</h1>
           <p className="text-sm text-muted-foreground">Main and branch stores side by side — click a store to drill in</p>
         </div>
         <Input type="date" value={date} max={today} onChange={(e) => setDate(e.target.value)} className="h-9 w-[150px]" data-testid="comparison-date-input" />

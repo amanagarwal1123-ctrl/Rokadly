@@ -2,9 +2,9 @@
 
 ## 1) Objectives
 - Deliver a **production-quality V1** for daily Rokad (cash/payment reconciliation) with correct integer-paise math, strict server-enforced RBAC, full auditability, print/PDF outputs, and store-day finalization locking.
-- Provide an end-to-end workflow covering: bill entry (split payments, Less Taken, Excess Returned), opening allocation, expenses/adjustments, cash count → discrepancy ledger, numbered non-cash reconciliation, account tally checklist, and finalization readiness gating.
-- Ship with realistic seeded demo data + credentials for all roles and prove the 15 acceptance scenarios via automated tests.
-- **Current status:** Phases 1 & 2 are complete, system is delivered and tested. Future work is optional enhancements (e.g., CSV statement upload and many-to-many matching UI).
+- Provide an end-to-end workflow covering: bill entry (split payments, Less Taken, Excess Returned), opening allocation, expenses/adjustments, cash count → discrepancy ledger, numbered non-cash reconciliation, account tally checklist, non-cash reconciliation, and finalization readiness gating.
+- Ship with realistic seeded demo data + credentials for all roles and prove acceptance scenarios via automated tests.
+- **Current status:** Phases 1–4 (functional V1) are complete and tested. **Phase 5 (full Mughal jewel-tone redesign) is now complete and verified** with frontend regression tests.
 
 ## 2) Implementation Steps
 
@@ -53,13 +53,7 @@
 **Goal:** working end-to-end app (React + FastAPI) with premium ledger design and print flows.
 
 ✅ **Completed**
-1. **Design system + UI direction implemented** (per design_agent guidelines):
-   - Ruby/emerald/graphite/brass palette.
-   - Refined woven/fabric texture used only on shell (nav/login/headers).
-   - Strong filled-red Pending rows; green verified/finalized cues.
-   - Dense, compact tables for desktop; mobile-first forms; ≤8px radius.
-   - Indian number formatting (₹, en-IN grouping), IST date conventions.
-2. **Full React frontend shipped** with shadcn/ui + Tailwind:
+1. **Full React frontend shipped** with shadcn/ui + Tailwind:
    - `/login` with demo quick-login buttons.
    - Role dashboards:
      - Cashier: today totals + expected vs counted + variance.
@@ -80,7 +74,7 @@
    - Daily Rokad Register (green verified tick, CSV export).
    - Admin: Comparison, Cross-store receipts, Banks + requests resolve, Users + permission matrix, Heads, Audit log.
    - Print pages: `/print/noncash`, `/print/cash` with A4 print CSS.
-3. **Seed data** created for demo realism:
+2. **Seed data** created for demo realism:
    - Main + 2 branches, multiple cashiers, accountant, managers with differing permission sets, admin.
    - SBI/HDFC/ICICI banks with display order.
    - Cross-store receipt (Main sale received into Rohini’s HDFC).
@@ -142,20 +136,90 @@
 
 ---
 
+### Phase 5 — Mughal Jewel-Tone UI Redesign (Visual overhaul; NO logic changes)
+**Goal:** Replace the initial Shadcn styling with a **single dark jewel-tone theme** (sapphire/ruby/emerald + brass), **NO white backgrounds anywhere (including textboxes)**, plus **curves-only Mughal ornamentation** (ogee/scallops/paisley/fish-scale) with subtle lighting play—while keeping dense finance data readable.
+
+✅ **Completed and Verified**
+
+**Non-negotiables / constraints (met)**
+- No backend/API/business logic changes.
+- `data-testid` attributes preserved.
+- Operational semantics preserved with high contrast:
+  - Ruby = pending/shortage/negative
+  - Emerald = verified/matched/finalized/positive
+  - Sapphire = neutral/base/primary action
+  - Brass = borders/focus rings/hairlines (zardozi accent)
+- No white surfaces in the app UI, including **inputs/textboxes**.
+- Textures are **CSS-only**, inline SVG data-URIs.
+- Gradients limited to ≤20% viewport and kept away from text-heavy surfaces.
+- Print: `@media print` remains white paper/black text.
+
+#### Phase 5A — Theme foundation + 1-page approval (Dashboard first)
+✅ **Completed**
+1. **Theme tokens (global)**
+   - Rewrote `/app/frontend/src/index.css` `:root` HSL variables to dark jewel-tone tokens.
+   - Added custom tokens (`--ink`, `--surface`, `--surface-2`, `--brass-dim`, `--focus`, `--shadow`, `--sapphire`, etc.).
+   - Implemented layered jewel “lighting play” in background (sapphire chandelier glow + ruby/emerald corner warmth).
+   - Replaced geometric lattice with **curves-only ogee trellis** texture.
+2. **Textures + lighting play**
+   - Rebuilt `/app/frontend/src/App.css`:
+     - Curved ogee shell texture + grain overlays.
+     - Animated brass/sapphire sheen on shell.
+     - `card-zardozi` brass glint + **fish-scale curved lattice**.
+     - `arch-underline` scalloped underline.
+     - `surface-2` sticky table headers.
+     - Jewel selection + scrollbar styling.
+3. **Dark matte inputs everywhere**
+   - Updated shadcn primitives:
+     - `/app/frontend/src/components/ui/input.jsx`
+     - `/app/frontend/src/components/ui/textarea.jsx`
+     - `/app/frontend/src/components/ui/select.jsx`
+   - All textboxes/inputs are dark matte using `--input` token (no white/transparent fields).
+4. **Fixes for dark theme clashes**
+   - Updated warning/open-day label color usage to token-driven `--warning`.
+   - Updated Card radius/shadows and removed light-mode assumptions.
+   - Ensured dialogs use `bg-card` surfaces and deep shadows.
+5. **Dashboard approval snapshot**
+   - Dashboard polished and validated across cashier/accountant/manager/admin.
+
+#### Phase 5B — Full rollout after approval
+✅ **Completed**
+1. **Applied theme across all pages and UI primitives**
+   - Curved motif enforced (no geometric diamonds); scalloped arch underline applied across **all 19 page titles**.
+   - Verified cards, tables, dropdowns, dialogs, and forms render dark and consistent.
+2. **Extra ornate login page (“front door”)**
+   - Implemented grand **9-lobed cusped Mughal arch** with hanging jhoomar pendant framing the hero headline.
+   - Added paisley + ogee overlays.
+   - Added niche arch crowning the sign-in card.
+   - Ruby glow CTA preserved.
+3. **On-screen print previews**
+   - Implemented parchment/champagne **on-screen** print preview via `.print-preview`.
+   - Preserved `@media print` white-paper output.
+   - Added `!important` to `.print-preview` to override body’s global dark background.
+4. **App-wide screenshot + regression checks**
+   - Visual sweep performed across roles/routes.
+
+✅ **Phase 5 result (definition of done):** Entire app adheres to the Mughal jewel-tone dark theme with **curves-only textures**, no white surfaces (including inputs), readable dense finance tables, preserved operational semantics, and verified via screenshots + frontend regression testing.
+
 ## 3) Next Actions
-1. **Maintenance/cleanup:** keep seed script authoritative (`python /app/backend/seed.py`) and reseed before demos.
+1. **Release readiness (optional):** lock design tokens and document “no-white” rule for future contributors.
 2. **Enhancement Phase (future, optional):**
    - CSV/XLSX bank statement upload.
    - Many-to-many matching UI (one statement row ↔ multiple receipts and vice versa).
    - Match suggestions and exception workflows at statement-line granularity.
    - Expense attachment uploads.
    - Deeper drill-down from Comparison metrics into underlying bills/expenses/recon items.
-3. **Operational readiness:** add pagination for very large registers, background exports, and performance tuning if needed.
 
 ## 4) Success Criteria
-✅ **Achieved**
-- Phase 1: POC script passes consistently (46/46), including duplicate race, serial ordering, cash math, finalization gating, cross-store receipts.
-- Phase 2: Full app supports cashier → accountant → manager/admin → finalize loop with locking + print views.
-- Phase 3/4: JWT + RBAC enforced; finalize/reopen audited; manager permission matrix enforced; discrepancies and cheques functional.
-- Testing: `testing_agent_v3` reported backend **34/34** and frontend **47/48** with the single issue verified as a false positive.
-- All 15 acceptance scenarios are covered via seed + automation, with mobile/tablet/desktop usability and Indian formatting.
+✅ **Achieved (Phases 1–5)**
+- Core system correctness: money math, RBAC, auditability, locking/finalization, print outputs.
+- Visual redesign requirements met:
+  - Dark jewel-tone theme across entire app
+  - No white backgrounds anywhere in the app UI, including form fields
+  - Curves-only Mughal ornamentation (ogee/scallops/paisley/fish-scale)
+  - Lighting play and premium “couture craftsmanship” feel
+  - Extra ornate login page
+  - Parchment on-screen print previews with white-paper print output
+- Testing:
+  - Prior baseline: backend **34/34** passing.
+  - Visual-redesign regression: **frontend 100% pass** across roles/routes; no functionality regressions; all `data-testid`s preserved (see `/app/test_reports/iteration_2.json`).

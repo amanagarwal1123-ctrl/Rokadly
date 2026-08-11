@@ -135,7 +135,7 @@ export default function ExpensesPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="font-display text-xl font-semibold">Expenses</h1>
+          <h1 className="font-display text-xl font-semibold arch-underline">Expenses</h1>
           <p className="text-sm text-muted-foreground">Business payments &amp; operating expenses — with or without voucher</p>
         </div>
         <StoreDatePicker />

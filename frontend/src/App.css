@@ -1,4 +1,4 @@
-/* Rokadly app styles */
+/* Rokadly app styles — Mughal jewel-tone dark theme */
 
 .font-display {
     font-family: 'Space Grotesk', ui-sans-serif, system-ui;
@@ -8,43 +8,147 @@
     font-variant-numeric: tabular-nums;
 }
 
-/* Woven shell texture - ONLY for nav / login / headers.
+/* ============ Shell texture: ink-sapphire + jaali lattice + grain ============
+   Used ONLY for nav / login / headers (ornament lives in the shell).
    NOTE: no position property here so Tailwind fixed/sticky still applies;
    add `relative` in markup where the element is otherwise static. */
 .shell-texture {
-    background: hsl(220 13% 12%);
-    color: hsl(36 33% 98%);
+    background-color: hsl(222 52% 6%);
+    background-image:
+        radial-gradient(460px 320px at 18% -4%, hsl(214 70% 20% / 0.55), transparent 70%),
+        radial-gradient(380px 420px at 90% 108%, hsl(350 62% 18% / 0.3), transparent 65%);
+    color: hsl(38 28% 92%);
+    overflow: hidden;
 }
 .shell-texture::before {
     content: '';
     position: absolute;
     inset: 0;
     pointer-events: none;
-    opacity: 0.1;
-    background-image: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.1) 0 1px, rgba(255, 255, 255, 0) 1px 6px),
-        repeating-linear-gradient(-45deg, rgba(0, 0, 0, 0.18) 0 1px, rgba(0, 0, 0, 0) 1px 7px);
+    opacity: 0.55;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Cg fill='none' stroke='%23D6B36A' stroke-opacity='0.22' stroke-width='1'%3E%3Cpath d='M48 6 L90 48 L48 90 L6 48 Z'/%3E%3Cpath d='M48 -42 L138 48 L48 138 L-42 48 Z'/%3E%3Cpath d='M48 54 L90 96 L48 138 L6 96 Z'/%3E%3C/g%3E%3Cg fill='%23D6B36A' fill-opacity='0.16'%3E%3Ccircle cx='48' cy='48' r='1.6'/%3E%3Ccircle cx='48' cy='6' r='1.2'/%3E%3Ccircle cx='90' cy='48' r='1.2'/%3E%3Ccircle cx='48' cy='90' r='1.2'/%3E%3Ccircle cx='6' cy='48' r='1.2'/%3E%3C/g%3E%3C/svg%3E"),
+        url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/></filter><rect width="120" height="120" filter="url(%23n)" opacity="0.12"/></svg>');
+    background-size: 96px 96px, 120px 120px;
     mix-blend-mode: overlay;
 }
+/* Lighting play: slow brass-sapphire sheen sweeping across the shell */
 .shell-texture::after {
     content: '';
     position: absolute;
-    inset: 0;
+    top: 0;
+    bottom: 0;
+    left: -60%;
+    width: 55%;
     pointer-events: none;
-    opacity: 0.06;
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/></filter><rect width="120" height="120" filter="url(%23n)" opacity="0.35"/></svg>');
+    background: linear-gradient(100deg, transparent 0%, hsl(43 62% 60% / 0.05) 42%, hsl(210 78% 62% / 0.06) 58%, transparent 100%);
     mix-blend-mode: soft-light;
+    animation: shell-sheen 14s linear infinite;
+    will-change: transform;
+}
+@keyframes shell-sheen {
+    0% { transform: translateX(0); opacity: 0; }
+    12% { opacity: 1; }
+    55% { opacity: 1; }
+    70% { transform: translateX(340%); opacity: 0; }
+    100% { transform: translateX(340%); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .shell-texture::after { animation: none; opacity: 0; }
 }
 .shell-texture > * {
     position: relative;
     z-index: 1;
 }
 
-/* Ruby shell variant for login accent */
+/* Deep ruby jewel variant for login accent */
 .shell-ruby {
-    background: linear-gradient(160deg, hsl(350 72% 24%) 0%, hsl(350 72% 32%) 55%, hsl(345 60% 22%) 100%);
+    background: linear-gradient(160deg, hsl(350 70% 16%) 0%, hsl(350 78% 26%) 55%, hsl(340 62% 14%) 100%);
 }
 
-/* Pending = strong filled red row */
+/* ============ Ornate login hero: grand Mughal arch chamber ============ */
+.login-hero {
+    background-color: hsl(222 52% 6%);
+    background-image:
+        linear-gradient(115deg, transparent 32%, hsl(43 62% 60% / 0.05) 46%, transparent 62%),
+        radial-gradient(1100px 700px at 22% 8%, hsl(214 70% 19% / 0.95), transparent 62%),
+        radial-gradient(900px 720px at 85% 102%, hsl(350 68% 16% / 0.6), transparent 65%);
+    color: hsl(38 28% 92%);
+    overflow: hidden;
+}
+.login-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.75;
+    background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='80' viewBox='0 0 64 80'%3E%3Cg fill='none' stroke='%23D6B36A' stroke-opacity='0.16' stroke-width='1'%3E%3Cpath d='M32 0 C48 16 64 24 64 40 C64 56 48 64 32 80 C16 64 0 56 0 40 C0 24 16 16 32 0 Z'/%3E%3Cpath d='M32 0 C48 16 64 24 64 40 C64 56 48 64 32 80 C16 64 0 56 0 40 C0 24 16 16 32 0 Z' transform='translate(-32,-40)'/%3E%3Cpath d='M32 0 C48 16 64 24 64 40 C64 56 48 64 32 80 C16 64 0 56 0 40 C0 24 16 16 32 0 Z' transform='translate(32,-40)'/%3E%3Cpath d='M32 0 C48 16 64 24 64 40 C64 56 48 64 32 80 C16 64 0 56 0 40 C0 24 16 16 32 0 Z' transform='translate(-32,40)'/%3E%3Cpath d='M32 0 C48 16 64 24 64 40 C64 56 48 64 32 80 C16 64 0 56 0 40 C0 24 16 16 32 0 Z' transform='translate(32,40)'/%3E%3C/g%3E%3C/svg%3E"),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cg fill='none' stroke='%23D6B36A' stroke-opacity='0.18'%3E%3Cpath d='M92 34c18 10 26 30 16 48-8 14-24 18-38 10 10 18 6 38-10 48-18 12-42 2-50-18-10-26 10-54 40-62 10-2 20-2 30 2-10-10-8-22 12-28z' stroke-width='1.2'/%3E%3Cpath d='M78 62c10 6 14 16 8 26-6 10-18 12-28 6' stroke-width='1'/%3E%3Cpath d='M62 104c8 6 10 14 4 22' stroke-width='1'/%3E%3C/g%3E%3Ccircle cx='104' cy='44' r='2' fill='%23D6B36A' fill-opacity='0.12'/%3E%3C/svg%3E");
+    background-size: 64px 80px, 220px 220px;
+    mix-blend-mode: overlay;
+}
+.login-hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.07;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/></filter><rect width="120" height="120" filter="url(%23n)" opacity="0.35"/></svg>');
+    mix-blend-mode: soft-light;
+}
+.login-hero > * {
+    position: relative;
+    z-index: 1;
+}
+
+/* ============ Zardozi card ornament: brass hairline glint + faint jaali ==== */
+.card-zardozi {
+    position: relative;
+    transition: box-shadow 200ms ease, border-color 200ms ease;
+}
+.card-zardozi::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background-image:
+        linear-gradient(135deg, hsl(43 62% 52% / 0.20), transparent 32%, transparent 68%, hsl(43 62% 52% / 0.12)),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='32' viewBox='0 0 48 32'%3E%3Cg fill='none' stroke='%23D6B36A' stroke-opacity='0.08' stroke-width='1'%3E%3Cpath d='M0 32 A24 24 0 0 1 48 32'/%3E%3Cpath d='M-24 16 A24 24 0 0 1 24 16'/%3E%3Cpath d='M24 16 A24 24 0 0 1 72 16'/%3E%3Cpath d='M0 0 A24 24 0 0 1 48 0'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: auto, 48px 32px;
+    mix-blend-mode: overlay;
+    opacity: 0.6;
+}
+.card-zardozi:hover {
+    box-shadow: 0 10px 34px hsl(var(--shadow) / 0.5), 0 0 0 1px hsl(var(--brass) / 0.16);
+}
+
+/* Scalloped Mughal arch underline for section titles / headers */
+.arch-underline {
+    position: relative;
+    padding-bottom: 12px;
+}
+.arch-underline::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: min(280px, 100%);
+    height: 12px;
+    pointer-events: none;
+    opacity: 0.6;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='12' viewBox='0 0 120 12'%3E%3Cpath d='M0 8 Q15 1.5 30 8 T60 8 T90 8 T120 8' fill='none' stroke='%23D6B36A' stroke-opacity='0.7' stroke-width='1.4'/%3E%3Cpath d='M0 11 H120' stroke='%23D6B36A' stroke-opacity='0.3' stroke-width='1'/%3E%3Ccircle cx='15' cy='8' r='1' fill='%23D6B36A' fill-opacity='0.55'/%3E%3Ccircle cx='45' cy='8' r='1' fill='%23D6B36A' fill-opacity='0.55'/%3E%3Ccircle cx='75' cy='8' r='1' fill='%23D6B36A' fill-opacity='0.55'/%3E%3Ccircle cx='105' cy='8' r='1' fill='%23D6B36A' fill-opacity='0.55'/%3E%3C/svg%3E");
+    background-repeat: repeat-x;
+    background-size: 120px 12px;
+}
+
+/* Gem glow text accents (lighting play on key figures) */
+.glow-sapphire { text-shadow: 0 0 26px hsl(210 78% 56% / 0.35); }
+.glow-emerald { text-shadow: 0 0 22px hsl(154 62% 45% / 0.35); }
+.glow-ruby { text-shadow: 0 0 22px hsl(350 78% 52% / 0.35); }
+
+/* ============ Status rows (operational semantics preserved) ============ */
+/* Pending = strong filled ruby row */
 .pending-row,
 .pending-row td {
     background-color: hsl(var(--danger)) !important;
@@ -52,14 +156,14 @@
 }
 .pending-row:hover,
 .pending-row:hover td {
-    background-color: hsl(350 72% 34%) !important;
+    background-color: hsl(350 78% 38%) !important;
 }
 .pending-row .text-muted-foreground {
-    color: hsl(36 33% 90%) !important;
+    color: hsl(38 28% 90%) !important;
 }
 
 .matched-row td {
-    background-color: hsl(154 55% 28% / 0.08);
+    background-color: hsl(154 62% 38% / 0.1);
 }
 
 .amount-cell {
@@ -70,15 +174,18 @@
 }
 
 .money-pos {
-    color: hsl(var(--success));
+    color: hsl(154 62% 46%);
     font-weight: 600;
 }
 .money-neg {
-    color: hsl(var(--danger));
+    color: hsl(350 85% 62%);
     font-weight: 600;
 }
 
 /* compact table density */
+.table-compact thead {
+    background: hsl(var(--surface-2));
+}
 .table-compact th {
     height: 2.25rem;
     padding: 0 0.5rem;
@@ -96,7 +203,7 @@
     position: sticky;
     top: 0;
     z-index: 10;
-    background: hsl(var(--background));
+    background: hsl(var(--surface-2));
 }
 
 /* mobile sticky action bar */
@@ -106,8 +213,8 @@
     left: 0;
     right: 0;
     z-index: 40;
-    border-top: 1px solid hsl(var(--border));
-    background: hsl(var(--background) / 0.95);
+    border-top: 1px solid hsl(var(--brass-dim) / 0.5);
+    background: hsl(var(--ink) / 0.92);
     backdrop-filter: blur(8px);
     padding: 0.5rem 0.75rem;
 }
@@ -121,6 +228,11 @@
 .print-only {
     display: none;
 }
+/* On-screen print preview: parchment, never stark white */
+.print-preview {
+    background-color: hsl(38 35% 88%) !important;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/></filter><rect width="120" height="120" filter="url(%23n)" opacity="0.05"/></svg>') !important;
+}
 @media print {
     @page {
         size: A4;
@@ -128,6 +240,11 @@
     }
     body {
         background: white !important;
+        background-image: none !important;
+    }
+    .print-preview {
+        background: white !important;
+        background-image: none !important;
     }
     .no-print {
         display: none !important;

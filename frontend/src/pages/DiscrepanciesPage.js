@@ -85,7 +85,7 @@ export default function DiscrepanciesPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="font-display text-xl font-semibold">Discrepancy ledger</h1>
+          <h1 className="font-display text-xl font-semibold arch-underline">Discrepancy ledger</h1>
           <p className="text-sm text-muted-foreground">Shortages &amp; excesses with responsibility allocation and later settlements</p>
         </div>
         <Select value={status} onValueChange={setStatus}>
