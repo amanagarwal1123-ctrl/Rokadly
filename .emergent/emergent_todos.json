@@ -1,0 +1,30 @@
+[
+  {
+    "content": "Phase 1: Build backend core (models, RBAC, bills, cash, recon, finalize, seed)",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 1: POC test_core.py — 46/46 passed",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 2: Design guidelines via design_agent",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 2: Frontend — all role dashboards, bill entry, recon, finalize, register, print",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 2: All user stories covered in development and testing",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 2: End-to-end testing via testing_agent_v3 (backend 34/34, frontend 47/48, 1 false positive verified)",
+    "status": "completed"
+  },
+  {
+    "content": "Re-seed clean demo data before delivery",
+    "status": "completed"
+  }
+]

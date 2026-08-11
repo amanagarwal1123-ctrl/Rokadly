@@ -1,0 +1,69 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+    margin: 0;
+    font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+@layer base {
+    :root {
+        --background: 36 33% 98%;
+        --foreground: 220 13% 12%;
+        --card: 36 33% 99%;
+        --card-foreground: 220 13% 12%;
+        --popover: 36 33% 99%;
+        --popover-foreground: 220 13% 12%;
+        --primary: 220 13% 12%;
+        --primary-foreground: 36 33% 98%;
+        --secondary: 36 18% 94%;
+        --secondary-foreground: 220 13% 12%;
+        --muted: 36 18% 94%;
+        --muted-foreground: 220 8% 42%;
+        --accent: 36 18% 94%;
+        --accent-foreground: 220 13% 12%;
+        --destructive: 350 72% 38%;
+        --destructive-foreground: 36 33% 98%;
+        --border: 36 12% 86%;
+        --input: 36 12% 86%;
+        --ring: 220 13% 12%;
+        --radius: 0.5rem;
+        --ruby: 350 72% 38%;
+        --ruby-foreground: 36 33% 98%;
+        --emerald: 154 55% 28%;
+        --emerald-foreground: 36 33% 98%;
+        --brass: 43 52% 46%;
+        --brass-foreground: 220 13% 12%;
+        --danger: 350 72% 38%;
+        --danger-foreground: 36 33% 98%;
+        --success: 154 55% 28%;
+        --success-foreground: 36 33% 98%;
+        --warning: 38 92% 45%;
+        --warning-foreground: 220 13% 12%;
+        --info: 205 70% 38%;
+        --info-foreground: 36 33% 98%;
+        --chart-1: 350 72% 38%;
+        --chart-2: 154 55% 28%;
+        --chart-3: 43 52% 46%;
+        --chart-4: 205 70% 38%;
+        --chart-5: 38 92% 45%;
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+    body {
+        @apply bg-background text-foreground;
+    }
+}
