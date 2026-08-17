@@ -4,7 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useApp } from "@/context/AppContext";
-import { CheckCircle2, AlertTriangle, Clock } from "lucide-react";
+import { CheckCircle2, AlertTriangle, Clock, Lock, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export const Money = ({ paise, signed, className = "", colored = false }) => {
   let cls = className;
@@ -13,7 +14,7 @@ export const Money = ({ paise, signed, className = "", colored = false }) => {
   return <span className={`font-mono-num ${cls}`}>{fmtINR(paise, { signed })}</span>;
 };
 
-export const MoneyInput = ({ value, onChange, placeholder = "0", testId, className = "", autoFocus, disabled }) => (
+export const MoneyInput = ({ value, onChange, placeholder = "0", testId, className = "", autoFocus, disabled, allowNegative = false }) => (
   <Input
     type="text"
     inputMode="decimal"
@@ -22,7 +23,8 @@ export const MoneyInput = ({ value, onChange, placeholder = "0", testId, classNa
     disabled={disabled}
     onChange={(e) => {
       const v = e.target.value;
-      if (/^[0-9]*\.?[0-9]{0,2}$/.test(v) || v === "") onChange(v);
+      const re = allowNegative ? /^-?[0-9]*\.?[0-9]{0,2}$/ : /^[0-9]*\.?[0-9]{0,2}$/;
+      if (re.test(v) || v === "") onChange(v);
     }}
     placeholder={placeholder}
     className={`text-right font-mono-num ${className}`}
@@ -117,6 +119,60 @@ export const EmptyState = ({ icon: Icon = AlertTriangle, title, sub }) => (
     {sub && <p className="text-xs text-muted-foreground/70 mt-1">{sub}</p>}
   </div>
 );
+
+export const LoadingState = ({ label = "Loading…" }) => (
+  <div className="flex flex-col gap-2 py-6" data-testid="loading-state" aria-busy="true">
+    <div className="h-4 w-40 rounded bg-[hsl(var(--surface-2))] animate-pulse" />
+    <div className="h-4 w-64 rounded bg-[hsl(var(--surface-2))] animate-pulse" />
+    <div className="h-4 w-52 rounded bg-[hsl(var(--surface-2))] animate-pulse" />
+    <span className="sr-only">{label}</span>
+  </div>
+);
+
+export const LoadErrorState = ({ error, onRetry, title = "Could not load data" }) => (
+  <div className="rounded-lg border border-[hsl(var(--danger))]/40 bg-[hsl(var(--danger))]/8 p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between"
+    data-testid="load-error-state" role="alert">
+    <div className="flex items-start gap-2 min-w-0">
+      <AlertTriangle className="h-4 w-4 text-[hsl(var(--danger))] mt-0.5 shrink-0" />
+      <div className="min-w-0">
+        <p className="text-sm font-semibold">{title}</p>
+        <p className="text-xs text-muted-foreground truncate">
+          {error?.response?.status ? `Server responded ${error.response.status}. ` : ""}
+          {error?.message || "The request failed. The backend may be waking up."}
+        </p>
+      </div>
+    </div>
+    <Button variant="outline" size="sm" onClick={onRetry} className="shrink-0" data-testid="retry-button">
+      <RefreshCw className="h-3.5 w-3.5 mr-1.5" /> Retry
+    </Button>
+  </div>
+);
+
+export const DayLockBanner = ({ storeDay, showDraftNote = false }) => {
+  if (!storeDay || storeDay.status !== "finalized") return null;
+  return (
+    <div className="rounded-lg border border-[hsl(var(--success))]/45 bg-[hsl(var(--success))]/10 px-4 py-3 flex items-start gap-3"
+      data-testid="day-lock-banner" role="status">
+      <Lock className="h-4 w-4 text-[hsl(var(--success))] mt-0.5 shrink-0" />
+      <div className="text-sm min-w-0">
+        <p className="font-semibold text-[hsl(var(--success))]">
+          Finalized and locked — {storeDay.business_date}
+        </p>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Finalized by {storeDay.finalized_by_name || "—"}
+          {storeDay.finalized_at ? ` on ${new Date(storeDay.finalized_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}` : ""}
+          {storeDay.closing_actual_paise !== null && storeDay.closing_actual_paise !== undefined && (
+            <> · Closing actual cash <Money paise={storeDay.closing_actual_paise} className="text-foreground" /></>
+          )}
+        </p>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Records for this day are view-only. Admin can reopen it with an audited reason.
+          {showDraftNote && " Unsaved drafts stay preserved but cannot be submitted against this locked day."}
+        </p>
+      </div>
+    </div>
+  );
+};
 
 export const SectionTitle = ({ children, right }) => (
   <div className="flex items-center justify-between gap-2 mb-2">

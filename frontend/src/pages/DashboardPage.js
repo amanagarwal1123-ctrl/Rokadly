@@ -1,8 +1,9 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
 import { api } from "@/lib/api";
 import { useApp } from "@/context/AppContext";
-import { Money, StatusBadge, StoreDatePicker, SectionTitle, VerifiedTick } from "@/components/shared";
+import { useAsyncData } from "@/hooks/useAsyncData";
+import { Money, StatusBadge, StoreDatePicker, SectionTitle, VerifiedTick, LoadErrorState, LoadingState, EmptyState } from "@/components/shared";
 import FinalizePanel from "@/components/FinalizePanel";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,12 +21,11 @@ const Stat = ({ label, paise, colored, testId, sub }) => (
 );
 
 const CashierDash = () => {
-  const { user, today, storeId } = useApp();
-  const [data, setData] = useState(null);
-  useEffect(() => {
-    api.get("/reports/today").then((r) => setData(r.data)).catch(() => {});
-  }, []);
-  if (!data) return <p className="text-sm text-muted-foreground animate-pulse">Loading…</p>;
+  const { user, today } = useApp();
+  const q = useAsyncData(() => api.get("/reports/today").then((r) => r.data), []);
+  if (q.error) return <LoadErrorState error={q.error} onRetry={q.reload} title="Could not load today's summary" />;
+  if (q.loading || !q.data) return <LoadingState />;
+  const data = q.data;
   const s = data.summary;
   const count = data.count;
   return (
@@ -36,7 +36,7 @@ const CashierDash = () => {
           <p className="text-sm text-muted-foreground mt-1">Business date <span className="font-mono-num">{today}</span></p>
         </div>
         <div className="flex gap-2">
-          <Button asChild className="bg-[hsl(var(--ruby))] hover:bg-[hsl(var(--ruby))]/90" data-testid="dash-new-bill-button">
+          <Button asChild className="bg-primary hover:bg-[hsl(var(--sapphire-2))]" data-testid="dash-new-bill-button">
             <Link to="/bills"><ReceiptText className="h-4 w-4 mr-1.5" />New Bill</Link>
           </Button>
         </div>
@@ -93,9 +93,9 @@ const CashierDash = () => {
 
 const AccountantDash = () => {
   const { allowedStores, date } = useApp();
-  const [queues, setQueues] = useState([]);
-  useEffect(() => {
-    (async () => {
+  const q = useAsyncData(
+    async () => {
+      if (!date || !allowedStores.length) return [];
       const rows = [];
       for (const s of allowedStores) {
         try {
@@ -107,15 +107,19 @@ const AccountantDash = () => {
           rows.push({ store: s, pending: recon.data.status_counts?.pending || 0, unreviewed: recon.data.status_counts?.unreviewed || 0, total: recon.data.total_items, expPending });
         } catch {}
       }
-      setQueues(rows);
-    })();
-  }, [allowedStores, date]);
+      return rows;
+    },
+    [allowedStores, date]
+  );
+  const queues = q.data || [];
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="font-display text-xl font-semibold arch-underline">Reconciliation work queue</h1>
         <StoreDatePicker hideStore />
       </div>
+      {q.error && <LoadErrorState error={q.error} onRetry={q.reload} title="Could not load work queue" />}
+      {q.loading && <LoadingState />}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {queues.map((q) => (
           <Card key={q.store.id} className="rounded-lg" data-testid={`queue-card-${q.store.code}`}>
@@ -139,13 +143,16 @@ const AccountantDash = () => {
 
 const ManagerAdminDash = () => {
   const { user, storeId, date } = useApp();
-  const [report, setReport] = useState(null);
-  const load = useCallback(() => {
-    if (!storeId || !date) return;
-    api.get("/reports/store-day", { params: { store_id: storeId, business_date: date } })
-      .then((r) => setReport(r.data)).catch(() => setReport(null));
-  }, [storeId, date]);
-  useEffect(() => { load(); }, [load]);
+  const q = useAsyncData(
+    () => {
+      if (!storeId || !date) return Promise.resolve(null);
+      return api.get("/reports/store-day", { params: { store_id: storeId, business_date: date } })
+        .then((r) => r.data);
+    },
+    [storeId, date]
+  );
+  const report = q.data;
+  const load = q.refresh;
   const a = report?.aggregate;
   return (
     <div className="space-y-5">
@@ -160,6 +167,9 @@ const ManagerAdminDash = () => {
           )}
         </div>
       </div>
+      {q.error && <LoadErrorState error={q.error} onRetry={q.reload} title="Could not load the store-day report" />}
+      {q.loading && <LoadingState />}
+      {!q.loading && !q.error && !a && <EmptyState title="Select a store and date" sub="No report for the current selection" />}
       {a && (
         <>
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2.5">

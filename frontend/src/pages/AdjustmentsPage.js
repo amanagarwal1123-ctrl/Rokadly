@@ -1,7 +1,8 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useState } from "react";
 import { api, errMsg, toPaise, PAYMENT_LABELS } from "@/lib/api";
 import { useApp } from "@/context/AppContext";
-import { Money, MoneyInput, StatusBadge, StoreDatePicker, EmptyState } from "@/components/shared";
+import { useAsyncData, useStoreDayLock } from "@/hooks/useAsyncData";
+import { Money, MoneyInput, StatusBadge, StoreDatePicker, EmptyState, DayLockBanner, LoadErrorState, LoadingState } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,21 +18,28 @@ export default function AdjustmentsPage() {
   const { user, banks, today, storeId, date } = useApp();
   const effStore = user.role === "cashier" ? user.store_id : storeId;
   const effDate = user.role === "cashier" ? today : date;
-  const [items, setItems] = useState([]);
   const [heads, setHeads] = useState([]);
   const [newHead, setNewHead] = useState("");
   const [form, setForm] = useState({ kind: "receipt", description: "", amount: "", payment_type: "cash", bank_id: "", other_label: "", head_id: "", related_bill_no: "" });
   const [voidTarget, setVoidTarget] = useState(null);
   const [voidReason, setVoidReason] = useState("");
 
-  const load = useCallback(() => {
-    if (!effStore || !effDate) return;
-    api.get("/adjustments", { params: { store_id: effStore, business_date: effDate } })
-      .then((r) => setItems(r.data.adjustments)).catch(() => {});
-    api.get("/heads", { params: { kind: "adjustment", store_id: effStore } })
-      .then((r) => setHeads(r.data.heads)).catch(() => {});
-  }, [effStore, effDate]);
-  useEffect(() => { load(); }, [load]);
+  const { storeDay, locked, refresh: refreshLock } = useStoreDayLock(effStore, effDate);
+
+  const q = useAsyncData(
+    async () => {
+      if (!effStore || !effDate) return null;
+      const [adj, hd] = await Promise.all([
+        api.get("/adjustments", { params: { store_id: effStore, business_date: effDate } }).then((r) => r.data.adjustments),
+        api.get("/heads", { params: { kind: "adjustment", store_id: effStore } }).then((r) => r.data.heads).catch(() => []),
+      ]);
+      setHeads(hd);
+      return adj;
+    },
+    [effStore, effDate]
+  );
+  const items = q.data || [];
+  const load = () => { q.refresh(); refreshLock(); };
 
   const addHead = async () => {
     if (!newHead.trim()) return;
@@ -45,6 +53,7 @@ export default function AdjustmentsPage() {
   };
 
   const save = async () => {
+    if (locked) { toast.error("This business date is finalized and locked"); return; }
     if (!form.description.trim()) { toast.error("Description is compulsory"); return; }
     if (!toPaise(form.amount)) { toast.error("Amount required"); return; }
     const body = {
@@ -81,6 +90,9 @@ export default function AdjustmentsPage() {
         <StoreDatePicker />
       </div>
 
+      <DayLockBanner storeDay={storeDay} />
+
+      {!locked && (
       <Card className="rounded-lg">
         <CardContent className="p-4 grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="space-y-1.5">
@@ -129,7 +141,7 @@ export default function AdjustmentsPage() {
             </Select>
             <div className="flex gap-1.5">
               <Input value={newHead} onChange={(e) => setNewHead(e.target.value)} placeholder="New head…" className="h-8 text-xs" data-testid="adjustment-new-head-input" />
-              <Button variant="outline" size="sm" className="h-8" onClick={addHead} data-testid="adjustment-add-head-button"><Plus className="h-3 w-3" /></Button>
+              <Button variant="outline" size="sm" className="h-8" onClick={addHead} aria-label="Add new head" title="Add new head" data-testid="adjustment-add-head-button"><Plus className="h-3 w-3" /></Button>
             </div>
           </div>
           <div className="space-y-1.5">
@@ -141,11 +153,17 @@ export default function AdjustmentsPage() {
             <Input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} data-testid="adjustment-description-input" />
           </div>
           <div className="flex items-end">
-            <Button onClick={save} className="bg-[hsl(var(--ruby))] hover:bg-[hsl(var(--ruby))]/90" data-testid="adjustment-save-button">Save</Button>
+            <Button onClick={save} className="bg-primary hover:bg-[hsl(var(--sapphire-2))]" data-testid="adjustment-save-button">Save</Button>
           </div>
         </CardContent>
       </Card>
+      )}
 
+      {q.error ? (
+        <LoadErrorState error={q.error} onRetry={q.reload} title="Could not load adjustments" />
+      ) : q.loading ? (
+        <Card className="rounded-lg"><CardContent className="p-4"><LoadingState /></CardContent></Card>
+      ) : (
       <Card className="rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <Table className="table-compact">
@@ -165,8 +183,9 @@ export default function AdjustmentsPage() {
                   <TableCell className="text-xs">{a.head_name || "—"}</TableCell>
                   <TableCell className="amount-cell"><Money paise={a.kind === "deduction" ? -a.amount_paise : a.amount_paise} colored /></TableCell>
                   <TableCell>
-                    {a.status === "active" && (a.cashier_id === user.id || user.role === "admin") && (
-                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-[hsl(var(--danger))]" onClick={() => setVoidTarget(a)} data-testid={`adjustment-void-${a.id.slice(0, 6)}`}><Ban className="h-3.5 w-3.5" /></Button>
+                    {a.status === "active" && !locked && (a.cashier_id === user.id || user.role === "admin") && (
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-[hsl(var(--danger))]" onClick={() => setVoidTarget(a)}
+                        aria-label="Void adjustment" title="Void adjustment" data-testid={`adjustment-void-${a.id.slice(0, 6)}`}><Ban className="h-3.5 w-3.5" /></Button>
                     )}
                   </TableCell>
                 </TableRow>
@@ -175,6 +194,7 @@ export default function AdjustmentsPage() {
           </Table>
         </div>
       </Card>
+      )}
 
       <Dialog open={!!voidTarget} onOpenChange={(o) => !o && setVoidTarget(null)}>
         <DialogContent>

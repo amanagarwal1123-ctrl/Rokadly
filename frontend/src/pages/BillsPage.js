@@ -1,7 +1,8 @@
-import React, { useEffect, useState, useCallback, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { api, errMsg, fmtINR, toPaise, fromPaise, PAYMENT_LABELS } from "@/lib/api";
 import { useApp } from "@/context/AppContext";
-import { Money, MoneyInput, StatusBadge, StoreDatePicker, SectionTitle, EmptyState } from "@/components/shared";
+import { useAsyncData, useStoreDayLock } from "@/hooks/useAsyncData";
+import { Money, MoneyInput, StatusBadge, StoreDatePicker, SectionTitle, EmptyState, DayLockBanner, LoadErrorState, LoadingState } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,14 +39,28 @@ export default function BillsPage() {
     } catch { return [newDraft()]; }
   });
   const [activeKey, setActiveKey] = useState(drafts[0]?.key);
-  const [bills, setBills] = useState([]);
-  const [dupWarn, setDupWarn] = useState(null);
+  const [dupWarn, setDupWarn] = useState(null); // { ...existing, forKey } — scoped to one draft
   const [busy, setBusy] = useState(false);
   const [voidTarget, setVoidTarget] = useState(null);
   const [voidReason, setVoidReason] = useState("");
   const syncTimer = useRef(null);
 
   const active = drafts.find((d) => d.key === activeKey) || drafts[0];
+  const { storeDay, locked, refresh: refreshLock } = useStoreDayLock(effStore, effDate);
+
+  // Duplicate warnings never leak between drafts / edit contexts
+  useEffect(() => { setDupWarn(null); }, [activeKey]);
+
+  const billsQ = useAsyncData(
+    () => {
+      if (!effStore || !effDate) return Promise.resolve(null);
+      return api.get("/bills", { params: { store_id: effStore, business_date: effDate, include_void: true } })
+        .then((r) => r.data.bills);
+    },
+    [effStore, effDate]
+  );
+  const bills = billsQ.data || [];
+  const loadBills = () => { billsQ.refresh(); refreshLock(); };
 
   const persist = (next) => {
     setDrafts(next);
@@ -61,13 +76,6 @@ export default function BillsPage() {
   const patchActive = (patch) => {
     persist(drafts.map((d) => (d.key === active.key ? { ...d, ...patch } : d)));
   };
-
-  const loadBills = useCallback(() => {
-    if (!effStore || !effDate) return;
-    api.get("/bills", { params: { store_id: effStore, business_date: effDate, include_void: true } })
-      .then((r) => setBills(r.data.bills)).catch(() => setBills([]));
-  }, [effStore, effDate]);
-  useEffect(() => { loadBills(); }, [loadBills]);
 
   // ---- computations ----
   const amountP = toPaise(active?.amount);
@@ -85,15 +93,16 @@ export default function BillsPage() {
   const checkDup = async () => {
     if (!active.bill_no?.trim() || !effStore) return;
     try {
-      const { data } = await api.get("/bills/check-duplicate", {
-        params: { store_id: effStore, business_date: effDate, bill_no: active.bill_no },
-      });
-      if (data.duplicate && (!active.editing)) setDupWarn(data.existing);
+      const params = { store_id: effStore, business_date: effDate, bill_no: active.bill_no };
+      if (active.editing) params.exclude_bill_id = active.editing.id; // never conflict with itself
+      const { data } = await api.get("/bills/check-duplicate", { params });
+      if (data.duplicate) setDupWarn({ ...data.existing, forKey: active.key });
       else setDupWarn(null);
     } catch {}
   };
 
   const save = async () => {
+    if (locked) { toast.error("This business date is finalized and locked"); return; }
     if (!active.bill_no?.trim()) { toast.error("MMI bill number is required"); return; }
     if (!amountP) { toast.error("Bill amount is required"); return; }
     if (active.customer_phone && active.country_code === "+91" && active.customer_phone.replace(/\D/g, "").length !== 10) {
@@ -203,6 +212,8 @@ export default function BillsPage() {
         {isAdmin && <StoreDatePicker />}
       </div>
 
+      <DayLockBanner storeDay={storeDay} showDraftNote />
+
       {/* Draft tabs */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1" data-testid="cashier-draft-tabs">
         {drafts.map((d, i) => (
@@ -215,7 +226,7 @@ export default function BillsPage() {
             {draftLabel(d, i)}
             {drafts.length > 0 && (
               <button onClick={(e) => { e.stopPropagation(); closeDraft(d.key); }}
-                className="ml-1 opacity-60 hover:opacity-100" data-testid={`draft-close-${i}`}>
+                className="ml-1 opacity-60 hover:opacity-100" aria-label={`Close ${draftLabel(d, i)}`} title="Close draft" data-testid={`draft-close-${i}`}>
                 <X className="h-3 w-3" />
               </button>
             )}
@@ -240,7 +251,7 @@ export default function BillsPage() {
           </AlertDescription>
         </Alert>
       )}
-      {dupWarn && !active.conflict && (
+      {dupWarn && dupWarn.forKey === active.key && !active.conflict && (
         <Alert className="border-[hsl(var(--warning))] bg-[hsl(var(--warning))]/10" data-testid="duplicate-warning-banner">
           <AlertTriangle className="h-4 w-4 text-[hsl(var(--warning))]" />
           <AlertDescription className="text-sm">
@@ -251,8 +262,9 @@ export default function BillsPage() {
 
       <div className="grid lg:grid-cols-[1fr_320px] gap-4 items-start">
         <Card className="rounded-lg">
-          <CardContent className="p-4 space-y-4">
-            <div className="grid grid-cols-2 gap-3">
+          <CardContent className="p-4">
+            <fieldset disabled={locked} className="space-y-4 border-0 p-0 m-0 min-w-0 disabled:opacity-60">
+            <div className="grid grid-cols-1 min-[480px]:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>MMI Bill No <span className="text-[hsl(var(--danger))]">*</span></Label>
                 <Input value={active.bill_no}
@@ -266,7 +278,7 @@ export default function BillsPage() {
                   className="h-11 text-base" testId="bill-entry-amount-input" />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 min-[480px]:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Customer name <span className="text-muted-foreground text-[11px]">(optional)</span></Label>
                 <Input value={active.customer_name} onChange={(e) => patchActive({ customer_name: e.target.value })}
@@ -274,16 +286,17 @@ export default function BillsPage() {
               </div>
               <div className="space-y-1.5">
                 <Label>Phone <span className="text-muted-foreground text-[11px]">(optional, 10 digits)</span></Label>
-                <div className="flex gap-1.5">
+                <div className="flex gap-1.5 w-full">
                   <select value={active.country_code} tabIndex={-1}
                     onChange={(e) => patchActive({ country_code: e.target.value })}
-                    className="h-11 rounded-md border border-input bg-background px-2 text-sm w-[76px]"
+                    className="h-11 rounded-md border border-input bg-background px-2 text-sm w-[72px] shrink-0"
+                    aria-label="Country code"
                     data-testid="bill-entry-country-code">
                     {["+91", "+971", "+1", "+44", "+65"].map((c) => <option key={c}>{c}</option>)}
                   </select>
                   <Input value={active.customer_phone} inputMode="numeric"
                     onChange={(e) => patchActive({ customer_phone: e.target.value.replace(/\D/g, "").slice(0, 10) })}
-                    className="h-11 font-mono-num" data-testid="bill-entry-phone-input" />
+                    className="h-11 font-mono-num flex-1 min-w-0" data-testid="bill-entry-phone-input" />
                 </div>
               </div>
             </div>
@@ -312,7 +325,8 @@ export default function BillsPage() {
                     <MoneyInput value={p.amount} onChange={(v) => setRow(i, { amount: v })}
                       className="h-10 flex-1" testId={`payment-amount-input-${i}`} />
                     {active.payments.length > 1 && (
-                      <Button variant="ghost" size="icon" onClick={() => removeRow(i)} className="h-10 w-10 text-muted-foreground" data-testid={`payment-row-remove-${i}`}>
+                      <Button variant="ghost" size="icon" onClick={() => removeRow(i)} className="h-10 w-10 text-muted-foreground"
+                        aria-label="Remove payment row" title="Remove payment row" data-testid={`payment-row-remove-${i}`}>
                         <X className="h-4 w-4" />
                       </Button>
                     )}
@@ -381,6 +395,7 @@ export default function BillsPage() {
                 </div>
               </div>
             )}
+            </fieldset>
           </CardContent>
         </Card>
 
@@ -394,15 +409,20 @@ export default function BillsPage() {
               {lessP > 0 && <div className="flex justify-between text-[hsl(var(--warning))]"><span>Less Taken</span><Money paise={lessP} /></div>}
               {excessP > 0 && <div className="flex justify-between text-[hsl(var(--danger))]"><span>Excess to return</span><Money paise={excessP} /></div>}
               <div className="flex justify-between font-semibold border-t pt-1.5">
-                <span>Net settlement</span><Money paise={Math.min(paidP, amountP)} />
+                <span>Money received</span><Money paise={Math.min(paidP, amountP)} />
               </div>
+              {lessP > 0 && (
+                <p className="text-[10px] text-muted-foreground">Bill settles in full; Less Taken is tracked separately.</p>
+              )}
             </div>
-            <Button onClick={save} disabled={busy}
-              className="w-full h-11 mt-2 bg-[hsl(var(--ruby))] hover:bg-[hsl(var(--ruby))]/90 text-white font-semibold"
+            <Button onClick={save} disabled={busy || locked}
+              className="w-full h-11 mt-2 bg-primary hover:bg-[hsl(var(--sapphire-2))] text-primary-foreground font-semibold"
               data-testid="bill-save-button">
-              {busy ? "Saving…" : active.editing ? "Update bill" : "Save bill"}
+              {locked ? "Day locked" : busy ? "Saving…" : active.editing ? "Update bill" : "Save bill"}
             </Button>
-            <p className="text-[11px] text-muted-foreground text-center">Drafts auto-save. Switch tabs freely.</p>
+            <p className="text-[11px] text-muted-foreground text-center">
+              {locked ? "Drafts stay preserved — this date needs an audited reopen before saving." : "Drafts auto-save. Switch tabs freely."}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -410,6 +430,11 @@ export default function BillsPage() {
       {/* Today's bills */}
       <div>
         <SectionTitle>Bills — {effDate}</SectionTitle>
+        {billsQ.error ? (
+          <LoadErrorState error={billsQ.error} onRetry={billsQ.reload} title="Could not load bills" />
+        ) : billsQ.loading ? (
+          <Card className="rounded-lg"><CardContent className="p-4"><LoadingState /></CardContent></Card>
+        ) : (
         <Card className="rounded-lg overflow-hidden">
           <div className="overflow-x-auto">
             <Table className="table-compact">
@@ -444,16 +469,18 @@ export default function BillsPage() {
                     <TableCell className="amount-cell">{b.less_taken_paise ? <Money paise={b.less_taken_paise} /> : "—"}</TableCell>
                     <TableCell><StatusBadge status={b.status} /></TableCell>
                     <TableCell>
-                      {b.status === "active" && (b.cashier_id === user.id || isAdmin) && (
-                        <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEdit(b)} data-testid={`bill-edit-${b.bill_no}`}>
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-[hsl(var(--danger))]" onClick={() => setVoidTarget(b)} data-testid={`bill-void-${b.bill_no}`}>
-                            <Ban className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      )}
+                    {b.status === "active" && !locked && (b.cashier_id === user.id || isAdmin) && (
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEdit(b)}
+                          aria-label={`Edit bill ${b.bill_no}`} title="Edit bill" data-testid={`bill-edit-${b.bill_no}`}>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-[hsl(var(--danger))]" onClick={() => setVoidTarget(b)}
+                          aria-label={`Void bill ${b.bill_no}`} title="Void bill" data-testid={`bill-void-${b.bill_no}`}>
+                          <Ban className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -461,6 +488,7 @@ export default function BillsPage() {
             </Table>
           </div>
         </Card>
+        )}
       </div>
 
       {/* Void dialog */}

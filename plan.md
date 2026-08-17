@@ -4,7 +4,13 @@
 - Deliver a **production-quality V1** for daily Rokad (cash/payment reconciliation) with correct integer-paise math, strict server-enforced RBAC, full auditability, print/PDF outputs, and store-day finalization locking.
 - Provide an end-to-end workflow covering: bill entry (split payments, Less Taken, Excess Returned), opening allocation, expenses/adjustments, cash count → discrepancy ledger, numbered non-cash reconciliation, account tally checklist, non-cash reconciliation, and finalization readiness gating.
 - Ship with realistic seeded demo data + credentials for all roles and prove acceptance scenarios via automated tests.
-- **Current status:** Phases 1–4 (functional V1) are complete and tested. **Phase 5 (full Mughal jewel-tone redesign) is now complete and verified** with frontend regression tests.
+- **Non-negotiable:** preserve existing DB model, seeded demo accounts, RBAC rules, calculations, audit history, and all proven workflows. This is a correction pass—**not a rewrite**.
+
+**Current status:**
+- ✅ Phases 1–5 complete (core system + Mughal jewel-tone theme).
+- ✅ **Phase 6 (Correction Pass) complete and verified** (day-lock UI, store/date sync, error/retry, duplicate edit warnings, signed opening adjustments, accessibility/mobile/data-quality fixes, and test repairs).
+
+---
 
 ## 2) Implementation Steps
 
@@ -26,200 +32,169 @@
    - `routes_recon.py`: reconciliation items grouped + continuous serials, recon status enforcement, account tallies, finalization readiness checklist, finalize/reopen.
    - `routes_admin.py`: auth/bootstrap, users + manager permission matrix, stores, banks + reorder, bank requests, settings, audit log.
    - `routes_reports.py`: cashier today summary, store-day overview, register, comparison, cross-store receipts, expenses 3-section report, print data.
-3. Added MongoDB indexes for integrity and performance, including:
-   - Unique bill constraint `(store_id, business_date, bill_no_norm)` (partial for active).
-   - Unique `client_key` via partial index (string-only) to support idempotency.
-   - Store-day uniqueness `(store_id, business_date)`.
-4. Wrote `test_core.py` exercising key acceptance scenarios including:
-   - Concurrent duplicate-bill race (first-save-wins, loser gets 409 with existing summary).
-   - Less Taken and Excess return correctness.
-   - Serial ordering Card → Cheque → Banks(display order) → Other.
-   - Cross-store bank receipt ownership.
-   - RBAC and manager permission gating.
-   - Finalize/lock/reopen cycle with audit.
+3. Added MongoDB indexes for integrity and performance.
+4. Wrote `test_core.py` acceptance-style coverage.
 
-✅ **Phase 1 result:** `test_core.py` passes **46/46**.
-
-**Phase 1 user stories (done)**
-1. Cashier can save bills and is prevented from duplicating bill number per store/date.
-2. Duplicate race loser retains the draft and re-saves with only bill number changed.
-3. Accountant gets a numbered non-cash list in exact print order.
-4. Manager/Admin cannot finalize unless blockers cleared (checklist gating).
-5. Admin sees cross-store receipts by receiving bank account without transferring ownership.
+✅ **Phase 1 result:** backend harness is stable.
 
 ---
 
 ### Phase 2 — V1 App Development (full stack MVP around proven core)
-**Goal:** working end-to-end app (React + FastAPI) with premium ledger design and print flows.
+**Goal:** working end-to-end app (React + FastAPI) with premium ledger UI and print flows.
 
 ✅ **Completed**
-1. **Full React frontend shipped** with shadcn/ui + Tailwind:
-   - `/login` with demo quick-login buttons.
-   - Role dashboards:
-     - Cashier: today totals + expected vs counted + variance.
-     - Accountant: work queue by store/date.
-     - Manager/Admin: store overview + readiness + FinalizePanel.
-   - Bills workspace:
-     - Multiple draft tabs (localStorage + server drafts), duplicate pre-check + conflict banner preserving values,
-     - Payment rows for Cash/Card/Cheque/Bank/Other,
-     - Auto Less Taken and Excess sections,
-     - Phone input with country code not in tab sequence.
-   - Opening allocation (real-time allocated/unallocated).
-   - Cash count (expected breakdown, variance preview, note enforcement).
-   - Expenses (entry, review/finalize, report in 3 sections).
-   - Adjustments (other receipts/deductions) + heads.
-   - Reconciliation (grouped serial list, filled-red pending rows, pending-only filter, tally checkbox, mark status dropdown).
-   - Cheque ledger (filters + status rules).
-   - Discrepancy ledger (allocate/equal-split/settle dialogs).
-   - Daily Rokad Register (green verified tick, CSV export).
-   - Admin: Comparison, Cross-store receipts, Banks + requests resolve, Users + permission matrix, Heads, Audit log.
-   - Print pages: `/print/noncash`, `/print/cash` with A4 print CSS.
-2. **Seed data** created for demo realism:
-   - Main + 2 branches, multiple cashiers, accountant, managers with differing permission sets, admin.
-   - SBI/HDFC/ICICI banks with display order.
-   - Cross-store receipt (Main sale received into Rohini’s HDFC).
-   - Less Taken and Excess examples.
-   - Expenses across all three reporting sections.
-   - Cheques pending/passed/bounced/paid-returned.
-   - Pending bank recon item blocking finalization.
-   - Shortage/excess discrepancies including shared split and later settlement.
-
-✅ **Phase 2 result:** End-to-end UI is complete and operational with print workflows.
-
-**Phase 2 user stories (done)**
-1. Cashier enters bills quickly with split payments; Less Taken/Excess computed correctly.
-2. Cashier maintains multiple drafts and switches without losing values.
-3. Accountant prints numbered non-cash list and marks Pending items that block finalization.
-4. Manager sees blockers and can only act within configured permissions.
-5. Admin compares stores side-by-side and reviews cross-store receipts.
+- Full React frontend shipped with shadcn/ui + Tailwind across all workflows.
+- Seeded demo data + demo credentials.
 
 ---
 
 ### Phase 3 — Add Auth + Locking + Reopen/Propagation (production-hardening)
 **Goal:** harden auth/locking/reopen and operational controls.
 
-✅ **Completed / already included in delivered V1**
-1. Username/password + JWT auth with seeded demo credentials.
-2. Finalization locking: all mutations blocked post-finalization except audited reopen.
-3. Admin reopen with compulsory reason + audit trail; later store-days flagged `needs_revalidation`.
-4. Cheque ledger with permissioned status changes; bounced stays report-only.
-5. Discrepancy ledger with allocation + later-date settlements.
-
-**Phase 3 user stories (done)**
-1. Users log in and only see permitted stores/actions.
-2. Post-finalization: cashier view-only, cannot modify.
-3. Admin reopen is audited and visible.
-4. Manager cheque management only if explicitly granted.
-5. Accountant can track unresolved discrepancies and later settlements without rewriting history.
+✅ **Completed / included in delivered V1**
+- JWT auth, strict RBAC, finalized-day lock, audited reopen, discrepancy later settlements, cheque lifecycle.
 
 ---
 
 ### Phase 4 — Reporting polish + PDF quality + operational controls
 **Goal:** accountant-grade printouts/reports and complete admin controls.
 
-✅ **Completed in delivered V1**
-1. Print/PDF-ready pages:
-   - Stable ordering, group totals, A4 print styles, headers.
-2. Admin operational modules:
-   - Bank requests approve/merge/reject.
-   - Bank reorder controls (serial order follows display order).
-   - Head management (activate/deactivate) without breaking history.
-3. Account-centric cross-store receipts report.
-4. Basic exports (Register CSV) + Indian number formatting throughout.
-
-**Phase 4 user stories (done)**
-1. Accountant prints lists matching on-screen order with totals.
-2. Admin can merge/approve bank names without breaking history.
-3. Admin can deactivate heads safely.
-4. Manager finalizes branch days using readiness checklist.
-5. Owner reviews month-to-date register with Indian formats.
+✅ **Completed**
+- Print/PDF flows, admin bank/head controls, register exports.
 
 ---
 
 ### Phase 5 — Mughal Jewel-Tone UI Redesign (Visual overhaul; NO logic changes)
-**Goal:** Replace the initial Shadcn styling with a **single dark jewel-tone theme** (sapphire/ruby/emerald + brass), **NO white backgrounds anywhere (including textboxes)**, plus **curves-only Mughal ornamentation** (ogee/scallops/paisley/fish-scale) with subtle lighting play—while keeping dense finance data readable.
+**Goal:** single dark jewel-tone theme with Mughal ornamentation and no white surfaces.
 
-✅ **Completed and Verified**
+✅ **Completed and verified**
+- Dark jewel tokens + curved ornamentation + ornate login + parchment on-screen print preview.
+- Frontend regression (visual) passed.
 
-**Non-negotiables / constraints (met)**
-- No backend/API/business logic changes.
-- `data-testid` attributes preserved.
-- Operational semantics preserved with high contrast:
-  - Ruby = pending/shortage/negative
-  - Emerald = verified/matched/finalized/positive
-  - Sapphire = neutral/base/primary action
-  - Brass = borders/focus rings/hairlines (zardozi accent)
-- No white surfaces in the app UI, including **inputs/textboxes**.
-- Textures are **CSS-only**, inline SVG data-URIs.
-- Gradients limited to ≤20% viewport and kept away from text-heavy surfaces.
-- Print: `@media print` remains white paper/black text.
+---
 
-#### Phase 5A — Theme foundation + 1-page approval (Dashboard first)
-✅ **Completed**
-1. **Theme tokens (global)**
-   - Rewrote `/app/frontend/src/index.css` `:root` HSL variables to dark jewel-tone tokens.
-   - Added custom tokens (`--ink`, `--surface`, `--surface-2`, `--brass-dim`, `--focus`, `--shadow`, `--sapphire`, etc.).
-   - Implemented layered jewel “lighting play” in background (sapphire chandelier glow + ruby/emerald corner warmth).
-   - Replaced geometric lattice with **curves-only ogee trellis** texture.
-2. **Textures + lighting play**
-   - Rebuilt `/app/frontend/src/App.css`:
-     - Curved ogee shell texture + grain overlays.
-     - Animated brass/sapphire sheen on shell.
-     - `card-zardozi` brass glint + **fish-scale curved lattice**.
-     - `arch-underline` scalloped underline.
-     - `surface-2` sticky table headers.
-     - Jewel selection + scrollbar styling.
-3. **Dark matte inputs everywhere**
-   - Updated shadcn primitives:
-     - `/app/frontend/src/components/ui/input.jsx`
-     - `/app/frontend/src/components/ui/textarea.jsx`
-     - `/app/frontend/src/components/ui/select.jsx`
-   - All textboxes/inputs are dark matte using `--input` token (no white/transparent fields).
-4. **Fixes for dark theme clashes**
-   - Updated warning/open-day label color usage to token-driven `--warning`.
-   - Updated Card radius/shadows and removed light-mode assumptions.
-   - Ensured dialogs use `bg-card` surfaces and deep shadows.
-5. **Dashboard approval snapshot**
-   - Dashboard polished and validated across cashier/accountant/manager/admin.
+### Phase 6 — Correction Pass (user-reported issues; preserve all working behavior)
+**Goal:** fix production correctness issues in UI behavior + data fetching + tests **without changing the accounting rules**.
 
-#### Phase 5B — Full rollout after approval
-✅ **Completed**
-1. **Applied theme across all pages and UI primitives**
-   - Curved motif enforced (no geometric diamonds); scalloped arch underline applied across **all 19 page titles**.
-   - Verified cards, tables, dropdowns, dialogs, and forms render dark and consistent.
-2. **Extra ornate login page (“front door”)**
-   - Implemented grand **9-lobed cusped Mughal arch** with hanging jhoomar pendant framing the hero headline.
-   - Added paisley + ogee overlays.
-   - Added niche arch crowning the sign-in card.
-   - Ruby glow CTA preserved.
-3. **On-screen print previews**
-   - Implemented parchment/champagne **on-screen** print preview via `.print-preview`.
-   - Preserved `@media print` white-paper output.
-   - Added `!important` to `.print-preview` to override body’s global dark background.
-4. **App-wide screenshot + regression checks**
-   - Visual sweep performed across roles/routes.
+✅ **Completed and verified (P0/P1/P2)**
 
-✅ **Phase 5 result (definition of done):** Entire app adheres to the Mughal jewel-tone dark theme with **curves-only textures**, no white surfaces (including inputs), readable dense finance tables, preserved operational semantics, and verified via screenshots + frontend regression testing.
+#### Phase 6A (P0) — Finalized days must be visibly and completely read-only
+✅ **Delivered**
+1. **Shared day-lock source**
+   - Added authorized endpoint `GET /api/store-day?store_id=&business_date=` returning store_day with status + finalized_by_name + finalized_at + closing_actual_paise.
+   - Implemented `useStoreDayLock(storeId, businessDate)` backed by that endpoint.
+2. **DayLockBanner**
+   - Banner shows `Finalized and locked` with finalizer, timestamp, closing actual cash.
+   - Explicitly states drafts remain preserved but cannot be submitted to a locked day.
+3. **Pre-request UI locking**
+   - Bills, Opening Cash, Cash Count, Expenses, Adjustments, Reconciliation now disable/hide mutation controls when locked (fieldsets disabled, buttons show “Day locked”).
+4. **Do NOT freeze later-life workflows**
+   - Cheque status updates and discrepancy settlements remain available (they operate on their own later dates/audit trails).
+5. **Admin reopen UX correction**
+   - Reopen confirm action is disabled until reason has non-whitespace content (server validation remains).
+6. **Backend enforcement remains ultimate**
+   - `ensure_day_open` remains the ultimate enforcement.
+   - Added missing day-lock enforcement to the expense review endpoint.
+
+#### Phase 6B (P0) — Store/Date filter synchronization + stale response race fixes
+✅ **Delivered**
+- Added `useAsyncData(fetchFn, deps)` with:
+  - **sequence guard** to prevent late responses overwriting newer selections
+  - **stale-data clearing** on dependency change
+  - consistent `loading | error | empty | success` state handling
+- Converted operational pages to use it for store/date driven requests.
+- Print/export links now derive from the same committed store/date state.
+- Verified live: date picker changes refetch all headings/tables/links and never shows stale financial data.
+
+**Acceptance reference verified live** (Main Jewellers on 2026-08-11):
+- Opening ₹50,000
+- Cash In ₹49,700
+- Non-Cash ₹68,500
+- Cash Expenses ₹6,500
+- Less Taken ₹200
+- Refunds ₹500
+- Expected ₹92,700
+- Actual ₹92,400
+- Variance shortage ₹300
+
+#### Phase 6C (P0) — Replace infinite loading with recoverable error + Retry states
+✅ **Delivered**
+- Added `LoadErrorState`, `LoadingState`, `EmptyState` patterns.
+- Operational pages now show concise error + `Retry` and never remain stuck on infinite `Loading...`.
+
+#### Phase 6D (P1) — Remove false duplicate warning during bill editing
+✅ **Delivered**
+- Duplicate-warning state is draft-scoped (no page-global leakage).
+- Backend duplicate-check now supports `exclude_bill_id`.
+- Frontend uses `exclude_bill_id` when editing; editing never self-conflicts.
+
+#### Phase 6E (P1) — Allow signed Admin opening adjustments
+✅ **Delivered**
+- `MoneyInput` gained `allowNegative` (used only for admin opening adjustment).
+- Signed preview of effective opening added.
+- Backend now rejects:
+  - zero adjustment
+  - any adjustment that makes effective opening negative
+
+#### Phase 6F (P2) — Data-quality + accessibility fixes
+✅ **Delivered**
+1. Expense voucher consistency:
+   - Voucher No visible only when `With Voucher`.
+   - Switching to `Without Voucher` clears voucher_no; backend normalizes it to `null`.
+2. Icon-only controls:
+   - Added `aria-label` + `title` tooltips to key icon-only buttons (logout/menu/close draft/edit/void/add-head, etc.).
+   - Preserved all existing `data-testid` attributes.
+3. Settlement wording:
+   - Bills panel label updated to **“Money received”** (calculations unchanged).
+
+#### Phase 6G — Mobile-first corrections
+✅ **Delivered and verified**
+- Bills: Customer name and Phone stack under 480px; phone input takes full remaining width.
+- Reconciliation: sticky Action column on narrow screens so amount/status/action remain reachable.
+- Verified at 360×800 and 390×844.
+
+#### Phase 6H — Visual refinements (not a redesign)
+✅ **Delivered**
+- Ruby reserved for pending/shortage/bounced/conflict/destructive/negative.
+- Routine primary actions (Save/Submit/Sign in) use sapphire primary.
+- Slight contrast bump for muted text + borders.
+- Reduced body background pattern/lighting behind dense operational surfaces while keeping login/nav richer.
+- Maintained ≤8px radius.
+
+#### Phase 6I — Repair and expand automated tests
+✅ **Delivered**
+- `backend/test_core.py` rewritten to:
+  - be seed-date aware (`SEED_DATE=2026-08-11`)
+  - never assume historical seed bills exist on `today`
+  - create isolated fixtures dynamically
+  - finalize flow rerunnable (reopen if needed, overwrite allocations/counts)
+  - add new coverage for: exclude self duplicate-check, signed adjustments, 423 enforcement breadth, reopen validation, voucher normalization, discrepancy reopening on resubmission variance
+- Results: **68/68 passed twice** (rerunnable).
+- Frontend testing agent report: **11/11 scenarios passed** (`/app/test_reports/iteration_3.json`).
+
+**Notes / known limitation:**
+- The backend test suite intentionally creates a small BR1 bill as part of its finalize/lock/reopen flow; it is void-cleaned where easy. No migrations were needed.
+
+---
 
 ## 3) Next Actions
-1. **Release readiness (optional):** lock design tokens and document “no-white” rule for future contributors.
-2. **Enhancement Phase (future, optional):**
-   - CSV/XLSX bank statement upload.
-   - Many-to-many matching UI (one statement row ↔ multiple receipts and vice versa).
-   - Match suggestions and exception workflows at statement-line granularity.
-   - Expense attachment uploads.
-   - Deeper drill-down from Comparison metrics into underlying bills/expenses/recon items.
+1. **No further P0 work outstanding.**
+2. Optional polish (post-V1):
+   - Bank statement upload + match suggestions (P1+).
+   - More comprehensive Playwright visual-regression snapshots per role.
+   - Fine-grained skeleton loaders per table section.
+
+---
 
 ## 4) Success Criteria
-✅ **Achieved (Phases 1–5)**
+✅ **Achieved (Phases 1–6)**
 - Core system correctness: money math, RBAC, auditability, locking/finalization, print outputs.
-- Visual redesign requirements met:
-  - Dark jewel-tone theme across entire app
-  - No white backgrounds anywhere in the app UI, including form fields
-  - Curves-only Mughal ornamentation (ogee/scallops/paisley/fish-scale)
-  - Lighting play and premium “couture craftsmanship” feel
-  - Extra ornate login page
-  - Parchment on-screen print previews with white-paper print output
-- Testing:
-  - Prior baseline: backend **34/34** passing.
-  - Visual-redesign regression: **frontend 100% pass** across roles/routes; no functionality regressions; all `data-testid`s preserved (see `/app/test_reports/iteration_2.json`).
+- Mughal jewel-tone visual identity delivered.
+- Finalized days are fully read-only in UI (pre-request) with accurate lock banner.
+- Store/date selection is authoritative; no stale financial data under a new date.
+- Recoverable error states with Retry replace infinite loading.
+- Duplicate warning during edit fixed (exclude self).
+- Signed opening adjustments supported with server validation.
+- Mobile and accessibility fixes delivered.
+- Tests repaired and rerunnable; backend suite green; frontend suite verified.
+- **Testing requirement satisfied:** `testing_agent` confirmed acceptance scenarios against the deployed preview (`/app/test_reports/iteration_3.json`).

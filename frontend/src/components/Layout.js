@@ -81,7 +81,7 @@ export default function Layout({ children }) {
               <div className="text-sm font-medium truncate" data-testid="sidebar-user-name">{user.name}</div>
               <div className="text-[11px] text-white/50">{ROLE_LABEL[user.role]}</div>
             </div>
-            <Button variant="ghost" size="icon" onClick={logout} className="text-white/60 hover:text-white hover:bg-white/10 h-9 w-9" data-testid="logout-button">
+            <Button variant="ghost" size="icon" onClick={logout} className="text-white/60 hover:text-white hover:bg-white/10 h-9 w-9" aria-label="Sign out" title="Sign out" data-testid="logout-button">
               <LogOut className="h-4 w-4" />
             </Button>
           </div>
@@ -94,7 +94,7 @@ export default function Layout({ children }) {
           <div className="flex items-center gap-2">
             <Sheet open={open} onOpenChange={setOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-white hover:bg-white/10 h-10 w-10" data-testid="mobile-menu-button">
+                <Button variant="ghost" size="icon" className="text-white hover:bg-white/10 h-10 w-10" aria-label="Open menu" title="Open menu" data-testid="mobile-menu-button">
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>

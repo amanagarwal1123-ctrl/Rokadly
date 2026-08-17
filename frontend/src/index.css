@@ -29,12 +29,12 @@ code {
         --secondary: 222 30% 14%;
         --secondary-foreground: 38 28% 92%;
         --muted: 222 26% 13%;
-        --muted-foreground: 220 12% 70%;
+        --muted-foreground: 220 14% 75%;
         --accent: 214 55% 16%;
         --accent-foreground: 38 28% 92%;
         --destructive: 350 78% 46%;
         --destructive-foreground: 38 28% 96%;
-        --border: 43 38% 34%;
+        --border: 43 36% 40%;
         --input: 222 24% 18%;
         --ring: 43 62% 52%;
         --radius: 0.5rem;
@@ -81,10 +81,10 @@ code {
            over an ink-sapphire base laced with a jaali lattice. */
         background-color: hsl(222 52% 6%);
         background-image:
-            radial-gradient(1200px 520px at 50% -140px, hsl(214 72% 26% / 0.5), transparent 65%),
-            radial-gradient(1000px 700px at 100% 115%, hsl(350 65% 20% / 0.22), transparent 60%),
-            radial-gradient(820px 620px at 0% 112%, hsl(154 50% 16% / 0.18), transparent 60%),
-            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='80' viewBox='0 0 64 80'%3E%3Cg fill='none' stroke='%23D6B36A' stroke-opacity='0.055' stroke-width='1'%3E%3Cpath d='M32 0 C48 16 64 24 64 40 C64 56 48 64 32 80 C16 64 0 56 0 40 C0 24 16 16 32 0 Z'/%3E%3Cpath d='M32 0 C48 16 64 24 64 40 C64 56 48 64 32 80 C16 64 0 56 0 40 C0 24 16 16 32 0 Z' transform='translate(-32,-40)'/%3E%3Cpath d='M32 0 C48 16 64 24 64 40 C64 56 48 64 32 80 C16 64 0 56 0 40 C0 24 16 16 32 0 Z' transform='translate(32,-40)'/%3E%3Cpath d='M32 0 C48 16 64 24 64 40 C64 56 48 64 32 80 C16 64 0 56 0 40 C0 24 16 16 32 0 Z' transform='translate(-32,40)'/%3E%3Cpath d='M32 0 C48 16 64 24 64 40 C64 56 48 64 32 80 C16 64 0 56 0 40 C0 24 16 16 32 0 Z' transform='translate(32,40)'/%3E%3C/g%3E%3Cg fill='%23D6B36A' fill-opacity='0.04'%3E%3Ccircle cx='32' cy='40' r='1.4'/%3E%3C/g%3E%3C/svg%3E");
+            radial-gradient(1200px 520px at 50% -140px, hsl(214 72% 26% / 0.32), transparent 65%),
+            radial-gradient(1000px 700px at 100% 115%, hsl(350 65% 20% / 0.12), transparent 60%),
+            radial-gradient(820px 620px at 0% 112%, hsl(154 50% 16% / 0.1), transparent 60%),
+            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='80' viewBox='0 0 64 80'%3E%3Cg fill='none' stroke='%23D6B36A' stroke-opacity='0.035' stroke-width='1'%3E%3Cpath d='M32 0 C48 16 64 24 64 40 C64 56 48 64 32 80 C16 64 0 56 0 40 C0 24 16 16 32 0 Z'/%3E%3Cpath d='M32 0 C48 16 64 24 64 40 C64 56 48 64 32 80 C16 64 0 56 0 40 C0 24 16 16 32 0 Z' transform='translate(-32,-40)'/%3E%3Cpath d='M32 0 C48 16 64 24 64 40 C64 56 48 64 32 80 C16 64 0 56 0 40 C0 24 16 16 32 0 Z' transform='translate(32,-40)'/%3E%3Cpath d='M32 0 C48 16 64 24 64 40 C64 56 48 64 32 80 C16 64 0 56 0 40 C0 24 16 16 32 0 Z' transform='translate(-32,40)'/%3E%3Cpath d='M32 0 C48 16 64 24 64 40 C64 56 48 64 32 80 C16 64 0 56 0 40 C0 24 16 16 32 0 Z' transform='translate(32,40)'/%3E%3C/g%3E%3Cg fill='%23D6B36A' fill-opacity='0.025'%3E%3Ccircle cx='32' cy='40' r='1.4'/%3E%3C/g%3E%3C/svg%3E");
         background-attachment: fixed;
         background-size: auto, auto, auto, 64px 80px;
     }

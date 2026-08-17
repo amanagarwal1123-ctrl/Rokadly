@@ -1,7 +1,8 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useState } from "react";
 import { api, errMsg, toPaise, fromPaise } from "@/lib/api";
 import { useApp } from "@/context/AppContext";
-import { Money, MoneyInput, StatusBadge, EmptyState } from "@/components/shared";
+import { useAsyncData } from "@/hooks/useAsyncData";
+import { Money, MoneyInput, StatusBadge, EmptyState, LoadErrorState } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,7 +17,6 @@ import { toast } from "sonner";
 export default function DiscrepanciesPage() {
   const { user, banks, storeId } = useApp();
   const [status, setStatus] = useState("all");
-  const [items, setItems] = useState([]);
   const [allocTarget, setAllocTarget] = useState(null);
   const [allocRows, setAllocRows] = useState([]);
   const [allocNote, setAllocNote] = useState("");
@@ -24,13 +24,17 @@ export default function DiscrepanciesPage() {
   const [settle, setSettle] = useState({ amount: "", mode: "cash", bank_id: "", note: "", related_bill_no: "" });
   const [cashiers, setCashiers] = useState([]);
 
-  const load = useCallback(() => {
-    const params = {};
-    if (status !== "all") params.status = status;
-    if (user.role !== "cashier" && storeId) params.store_id = storeId;
-    api.get("/discrepancies", { params }).then((r) => setItems(r.data.discrepancies)).catch((e) => toast.error(errMsg(e)));
-  }, [status, storeId, user.role]);
-  useEffect(() => { load(); }, [load]);
+  const q = useAsyncData(
+    () => {
+      const params = {};
+      if (status !== "all") params.status = status;
+      if (user.role !== "cashier" && storeId) params.store_id = storeId;
+      return api.get("/discrepancies", { params }).then((r) => r.data.discrepancies);
+    },
+    [status, storeId, user.role]
+  );
+  const items = q.data || [];
+  const load = q.refresh;
 
   const openAlloc = async (d) => {
     setAllocTarget(d);
@@ -111,7 +115,9 @@ export default function DiscrepanciesPage() {
               <TableHead>Status</TableHead><TableHead className="w-[150px]"></TableHead>
             </TableRow></TableHeader>
             <TableBody>
-              {items.length === 0 && <TableRow><TableCell colSpan={8}><EmptyState icon={AlertTriangle} title="No discrepancies" /></TableCell></TableRow>}
+              {q.error && <TableRow><TableCell colSpan={8}><LoadErrorState error={q.error} onRetry={q.reload} title="Could not load discrepancies" /></TableCell></TableRow>}
+              {q.loading && <TableRow><TableCell colSpan={8} className="text-center py-8 text-sm text-muted-foreground animate-pulse">Loading…</TableCell></TableRow>}
+              {!q.loading && !q.error && items.length === 0 && <TableRow><TableCell colSpan={8}><EmptyState icon={AlertTriangle} title="No discrepancies" /></TableCell></TableRow>}
               {items.map((d) => (
                 <TableRow key={d.id} data-testid={`discrepancy-row-${d.id.slice(0, 6)}`}>
                   <TableCell className="font-mono-num text-xs">{d.business_date}</TableCell>

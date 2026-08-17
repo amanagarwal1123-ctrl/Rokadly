@@ -1,7 +1,8 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { api, errMsg } from "@/lib/api";
+import React, { useEffect, useState } from "react";
+import { api } from "@/lib/api";
 import { useApp } from "@/context/AppContext";
-import { Money, StatusBadge, VerifiedTick } from "@/components/shared";
+import { useAsyncData } from "@/hooks/useAsyncData";
+import { Money, StatusBadge, VerifiedTick, LoadErrorState, LoadingState } from "@/components/shared";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -27,15 +28,16 @@ const METRICS = [
 export default function ComparisonPage() {
   const { today, setStoreId } = useApp();
   const [date, setDate] = useState(today);
-  const [rows, setRows] = useState(null);
 
-  const load = useCallback(() => {
-    if (!date) return;
-    api.get("/reports/comparison", { params: { business_date: date } })
-      .then((r) => setRows(r.data.rows)).catch((e) => toast.error(errMsg(e)));
-  }, [date]);
+  const q = useAsyncData(
+    () => {
+      if (!date) return Promise.resolve(null);
+      return api.get("/reports/comparison", { params: { business_date: date } }).then((r) => r.data.rows);
+    },
+    [date]
+  );
+  const rows = q.data;
   useEffect(() => { setDate(today); }, [today]);
-  useEffect(() => { load(); }, [load]);
 
   return (
     <div className="space-y-5">
@@ -47,6 +49,9 @@ export default function ComparisonPage() {
         <Input type="date" value={date} max={today} onChange={(e) => setDate(e.target.value)} className="h-9 w-[150px]" data-testid="comparison-date-input" />
       </div>
 
+      {q.error && <LoadErrorState error={q.error} onRetry={q.reload} title="Could not load the comparison" />}
+      {q.loading && <LoadingState />}
+      {!q.loading && !q.error && (
       <Card className="rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <Table className="table-compact">
@@ -99,6 +104,7 @@ export default function ComparisonPage() {
           </Table>
         </div>
       </Card>
+      )}
     </div>
   );
 }

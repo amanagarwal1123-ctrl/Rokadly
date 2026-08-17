@@ -1,8 +1,9 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { api, errMsg, RECON_LABELS } from "@/lib/api";
 import { useApp } from "@/context/AppContext";
-import { Money, StatusBadge, StoreDatePicker, EmptyState } from "@/components/shared";
+import { useAsyncData, useStoreDayLock } from "@/hooks/useAsyncData";
+import { Money, StatusBadge, StoreDatePicker, EmptyState, DayLockBanner, LoadErrorState, LoadingState } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -15,24 +16,28 @@ import { toast } from "sonner";
 
 export default function ReconciliationPage() {
   const { user, storeId, date } = useApp();
-  const [data, setData] = useState(null);
   const [pendingOnly, setPendingOnly] = useState(false);
 
+  const { storeDay, locked, refresh: refreshLock } = useStoreDayLock(storeId, date);
+
   const perms = user.manager_permissions?.[storeId] || {};
-  const canMark = user.role === "admin" || user.role === "accountant" ||
-    (user.role === "manager" && (perms.reconcile || perms.mark_status));
+  const canMark = !locked && (user.role === "admin" || user.role === "accountant" ||
+    (user.role === "manager" && (perms.reconcile || perms.mark_status)));
   const canClear = user.role === "admin" || user.role === "accountant" ||
     (user.role === "manager" && perms.clear_matched);
-  const canTally = user.role === "admin" || (user.role === "manager" && perms.final_tally);
+  const canTally = !locked && (user.role === "admin" || (user.role === "manager" && perms.final_tally));
   const canException = user.role === "admin";
 
-  const load = useCallback(() => {
-    if (!storeId || !date) return;
-    api.get("/recon/items", { params: { store_id: storeId, business_date: date } })
-      .then((r) => setData(r.data))
-      .catch((e) => { setData(null); toast.error(errMsg(e)); });
-  }, [storeId, date]);
-  useEffect(() => { load(); }, [load]);
+  const q = useAsyncData(
+    () => {
+      if (!storeId || !date) return Promise.resolve(null);
+      return api.get("/recon/items", { params: { store_id: storeId, business_date: date } })
+        .then((r) => r.data);
+    },
+    [storeId, date]
+  );
+  const data = q.data;
+  const load = () => { q.refresh(); refreshLock(); };
 
   const mark = async (item, status, note) => {
     try {
@@ -53,10 +58,23 @@ export default function ReconciliationPage() {
     } catch (e) { toast.error(errMsg(e)); }
   };
 
+  if (q.error) return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between"><h1 className="font-display text-xl font-semibold arch-underline">Reconciliation</h1><StoreDatePicker /></div>
+      <LoadErrorState error={q.error} onRetry={q.reload}
+        title={q.error?.response?.status === 403 ? "You do not have reconciliation access for this store" : "Could not load reconciliation items"} />
+    </div>
+  );
+  if (q.loading) return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between"><h1 className="font-display text-xl font-semibold arch-underline">Reconciliation</h1><StoreDatePicker /></div>
+      <LoadingState />
+    </div>
+  );
   if (!data) return (
     <div className="space-y-4">
       <div className="flex items-center justify-between"><h1 className="font-display text-xl font-semibold arch-underline">Reconciliation</h1><StoreDatePicker /></div>
-      <EmptyState icon={GitCompareArrows} title="No reconciliation access or no data" />
+      <EmptyState icon={GitCompareArrows} title="Select a store and date" />
     </div>
   );
 
@@ -79,6 +97,8 @@ export default function ReconciliationPage() {
           </Button>
         </div>
       </div>
+
+      <DayLockBanner storeDay={storeDay} />
 
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex gap-1.5 flex-wrap text-xs" data-testid="recon-status-summary">
@@ -117,7 +137,7 @@ export default function ReconciliationPage() {
               {!canTally && g.tallied && <StatusBadge status="finalized" label="Tallied" />}
             </div>
             <div className="overflow-x-auto">
-              <Table className="table-compact">
+              <Table className="table-compact recon-table">
                 <TableHeader><TableRow>
                   <TableHead className="w-[50px]">#</TableHead>
                   <TableHead>Bill / Ref</TableHead>

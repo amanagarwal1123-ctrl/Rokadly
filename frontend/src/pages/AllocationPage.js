@@ -1,7 +1,8 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import { api, errMsg, fromPaise, toPaise } from "@/lib/api";
 import { useApp } from "@/context/AppContext";
-import { Money, MoneyInput, StoreDatePicker, EmptyState } from "@/components/shared";
+import { useAsyncData, useStoreDayLock } from "@/hooks/useAsyncData";
+import { Money, MoneyInput, StoreDatePicker, EmptyState, DayLockBanner, LoadErrorState, LoadingState } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,28 +15,48 @@ export default function AllocationPage() {
   const { user, today, storeId, date } = useApp();
   const effStore = user.role === "cashier" ? user.store_id : storeId;
   const effDate = user.role === "cashier" ? today : date;
-  const [data, setData] = useState(null);
   const [inputs, setInputs] = useState({});
   const [adjOpen, setAdjOpen] = useState(false);
   const [adjAmount, setAdjAmount] = useState("");
   const [adjReason, setAdjReason] = useState("");
 
-  const load = useCallback(() => {
-    if (!effStore || !effDate) return;
-    api.get("/allocations/summary", { params: { store_id: effStore, business_date: effDate } })
-      .then((r) => {
-        setData(r.data);
-        const map = {};
-        r.data.allocations.forEach((a) => { map[a.cashier_id] = fromPaise(a.amount_paise); });
-        setInputs(map);
-      }).catch((e) => toast.error(errMsg(e)));
-  }, [effStore, effDate]);
-  useEffect(() => { load(); }, [load]);
+  const { storeDay, refresh: refreshLock } = useStoreDayLock(effStore, effDate);
 
-  if (!data) return <p className="text-sm text-muted-foreground animate-pulse">Loading…</p>;
+  const q = useAsyncData(
+    () => {
+      if (!effStore || !effDate) return Promise.resolve(null);
+      return api.get("/allocations/summary", { params: { store_id: effStore, business_date: effDate } })
+        .then((r) => r.data);
+    },
+    [effStore, effDate]
+  );
+  const data = q.data;
+
+  useEffect(() => {
+    if (!data) { setInputs({}); return; }
+    const map = {};
+    data.allocations.forEach((a) => { map[a.cashier_id] = fromPaise(a.amount_paise); });
+    setInputs(map);
+  }, [data]);
+
+  const header = (
+    <div className="flex items-center justify-between flex-wrap gap-2">
+      <div>
+        <h1 className="font-display text-xl font-semibold arch-underline">Opening cash allocation</h1>
+        <p className="text-sm text-muted-foreground">Distribute the store opening among cashiers — zero is valid</p>
+      </div>
+      <StoreDatePicker />
+    </div>
+  );
+
+  if (q.error) return <div className="space-y-5">{header}<LoadErrorState error={q.error} onRetry={q.reload} title="Could not load opening allocations" /></div>;
+  if (q.loading) return <div className="space-y-5">{header}<LoadingState /></div>;
+  if (!data) return <div className="space-y-5">{header}<EmptyState icon={Wallet} title="Select a store and date" /></div>;
+
+  const dayFinalized = data.store_day.status === "finalized";
 
   const canEdit = (cid) =>
-    data.store_day.status !== "finalized" &&
+    !dayFinalized &&
     ((user.role === "cashier" && cid === user.id && effDate === today) || user.role === "admin");
 
   const saveAlloc = async (cid) => {
@@ -44,20 +65,27 @@ export default function AllocationPage() {
       if (user.role === "admin") body.cashier_id = cid;
       await api.put("/allocations", body);
       toast.success("Allocation saved");
-      load();
+      q.refresh(); refreshLock();
     } catch (e) { toast.error(errMsg(e)); }
   };
 
+  // Signed opening adjustment (admin): preview the resulting effective opening
+  const adjPaise = toPaise(adjAmount);
+  const previewOpening = data.opening_paise !== undefined
+    ? (data.opening_paise ?? 0) + adjPaise
+    : null;
+
   const saveAdj = async () => {
     if (!adjReason.trim()) { toast.error("Reason is compulsory"); return; }
+    if (!adjPaise) { toast.error("Enter a non-zero amount (negative allowed)"); return; }
     try {
       await api.post("/allocations/opening-adjustment", {
         store_id: effStore, business_date: effDate,
-        amount_paise: toPaise(adjAmount), reason: adjReason,
+        amount_paise: adjPaise, reason: adjReason,
       });
       toast.success("Opening adjustment approved");
       setAdjOpen(false); setAdjAmount(""); setAdjReason("");
-      load();
+      q.refresh(); refreshLock();
     } catch (e) { toast.error(errMsg(e)); }
   };
 
@@ -73,15 +101,11 @@ export default function AllocationPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div>
-          <h1 className="font-display text-xl font-semibold arch-underline">Opening cash allocation</h1>
-          <p className="text-sm text-muted-foreground">Distribute the store opening among cashiers — zero is valid</p>
-        </div>
-        <StoreDatePicker />
-      </div>
+      {header}
 
-      <div className="grid grid-cols-3 gap-2.5">
+      <DayLockBanner storeDay={storeDay || data.store_day} />
+
+      <div className="grid grid-cols-1 min-[480px]:grid-cols-3 gap-2.5">
         <Card className="rounded-lg"><CardContent className="p-3">
           <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Store opening</p>
           <p className="text-lg font-semibold"><Money paise={data.effective_opening_paise} /></p>
@@ -99,17 +123,30 @@ export default function AllocationPage() {
         </CardContent></Card>
       </div>
 
-      {user.role === "admin" && data.store_day.status !== "finalized" && (
+      {user.role === "admin" && !dayFinalized && (
         <Dialog open={adjOpen} onOpenChange={setAdjOpen}>
           <DialogTrigger asChild>
             <Button variant="outline" size="sm" data-testid="opening-adjustment-button">Admin: opening adjustment</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>Approved opening adjustment</DialogTitle></DialogHeader>
-            <p className="text-sm text-muted-foreground">Adds/subtracts from the carried opening (use negative via minus in amount? Enter positive amount; use reason to explain). This is audited.</p>
-            <MoneyInput value={adjAmount} onChange={setAdjAmount} testId="opening-adjustment-amount" />
+            <p className="text-sm text-muted-foreground">
+              Enter a positive amount to add to the carried opening, or a negative amount (e.g. <span className="font-mono-num">-500</span>) to reduce it.
+              A reason is compulsory and the change is audited.
+            </p>
+            <MoneyInput value={adjAmount} onChange={setAdjAmount} allowNegative testId="opening-adjustment-amount" placeholder="e.g. 500 or -500" />
+            {adjAmount !== "" && adjAmount !== "-" && (
+              <p className="text-xs" data-testid="opening-adjustment-preview">
+                Carried opening <Money paise={data.opening_paise} /> {adjPaise >= 0 ? "+" : "−"} <Money paise={Math.abs(adjPaise)} />
+                {" "}→ effective opening{" "}
+                <Money paise={previewOpening} className={previewOpening < 0 ? "money-neg" : "font-semibold"} />
+                {previewOpening < 0 && <span className="text-[hsl(var(--danger))] ml-1">cannot go below zero</span>}
+              </p>
+            )}
             <Textarea value={adjReason} onChange={(e) => setAdjReason(e.target.value)} placeholder="Reason (compulsory)" data-testid="opening-adjustment-reason" />
-            <DialogFooter><Button onClick={saveAdj} data-testid="opening-adjustment-save">Approve</Button></DialogFooter>
+            <DialogFooter>
+              <Button onClick={saveAdj} disabled={!adjReason.trim() || !adjPaise || previewOpening < 0} data-testid="opening-adjustment-save">Approve</Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       )}

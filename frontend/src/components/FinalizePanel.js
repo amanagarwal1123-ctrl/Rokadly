@@ -1,7 +1,8 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useState } from "react";
 import { api, errMsg } from "@/lib/api";
 import { useApp } from "@/context/AppContext";
-import { Money, VerifiedTick } from "@/components/shared";
+import { useAsyncData } from "@/hooks/useAsyncData";
+import { Money, VerifiedTick, LoadErrorState, LoadingState } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,24 +12,26 @@ import { toast } from "sonner";
 
 export default function FinalizePanel({ storeId, businessDate, onChanged }) {
   const { user } = useApp();
-  const [data, setData] = useState(null);
   const [note, setNote] = useState("");
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [reopenOpen, setReopenOpen] = useState(false);
 
-  const load = useCallback(async () => {
-    if (!storeId || !businessDate) return;
-    try {
-      const { data } = await api.get("/finalize/readiness", { params: { store_id: storeId, business_date: businessDate } });
-      setData(data);
-    } catch (e) {
-      setData(null);
-    }
-  }, [storeId, businessDate]);
+  const q = useAsyncData(
+    () => {
+      if (!storeId || !businessDate) return Promise.resolve(null);
+      return api.get("/finalize/readiness", { params: { store_id: storeId, business_date: businessDate } })
+        .then((r) => r.data);
+    },
+    [storeId, businessDate]
+  );
+  const data = q.data;
+  const load = q.refresh;
 
-  useEffect(() => { load(); }, [load]);
-
+  if (q.error) return <LoadErrorState error={q.error} onRetry={q.reload} title="Could not load finalization readiness" />;
+  if (q.loading) return (
+    <Card className="rounded-lg"><CardContent className="p-4"><LoadingState /></CardContent></Card>
+  );
   if (!data) return null;
   const sd = data.store_day;
   const finalized = sd.status === "finalized";
@@ -100,7 +103,7 @@ export default function FinalizePanel({ storeId, businessDate, onChanged }) {
                   <p className="text-sm text-muted-foreground">A compulsory reason will be recorded in the audit history. Later days will be flagged for revalidation.</p>
                   <Textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason for reopening (compulsory)" data-testid="reopen-reason-input" />
                   <DialogFooter>
-                    <Button onClick={doReopen} disabled={busy} className="bg-[hsl(var(--danger))] hover:bg-[hsl(var(--danger))]/90" data-testid="reopen-confirm-button">Reopen day</Button>
+                    <Button onClick={doReopen} disabled={busy || !reason.trim()} className="bg-[hsl(var(--danger))] hover:bg-[hsl(var(--danger))]/90" data-testid="reopen-confirm-button">Reopen day</Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>

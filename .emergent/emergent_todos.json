@@ -1,26 +1,46 @@
 [
   {
-    "content": "Replace diamond jaali with curved ogee trellis (body + shell) and fish-scale lattice (cards) — curves only",
+    "content": "Backend: /store-day endpoint, check-duplicate exclude_bill_id, expense review day-lock, voucher normalization, opening adjustment validation",
     "status": "completed"
   },
   {
-    "content": "Verify curved textures on dashboard via screenshot",
+    "content": "Frontend infra: useAsyncData + useStoreDayLock hooks, DayLockBanner, LoadErrorState, MoneyInput allowNegative",
     "status": "completed"
   },
   {
-    "content": "Phase 5B: extra-ornate login page (Mughal arch framing, paisley, curved ornament)",
+    "content": "BillsPage: day-lock UI, per-draft dup warn + exclude self, mobile phone stacking, Save→primary, wording, tooltips",
     "status": "completed"
   },
   {
-    "content": "Phase 5B: parchment on-screen print previews (keep @media print white)",
+    "content": "CashCount + Allocation: race-safe fetch, error/retry, lock UI, signed adjustment dialog",
     "status": "completed"
   },
   {
-    "content": "Phase 5B: app-wide visual sweep across all routes (screenshots per role)",
+    "content": "Expenses + Adjustments: lock UI, voucher conditional, error/retry, Save→primary",
     "status": "completed"
   },
   {
-    "content": "Frontend regression test pass via testing agent",
+    "content": "Reconciliation: race-safe, error/retry, lock UI, sticky action col mobile",
+    "status": "completed"
+  },
+  {
+    "content": "Dashboard + FinalizePanel: race-safe, reopen reason gating",
+    "status": "completed"
+  },
+  {
+    "content": "Register/Cheques/Discrepancies/Comparison/CrossStore: error/retry states",
+    "status": "completed"
+  },
+  {
+    "content": "CSS visual refinements: contrast, calmer data surfaces, ruby→sapphire routine actions",
+    "status": "completed"
+  },
+  {
+    "content": "test_core.py repair + new coverage; run suite green (68/68 twice)",
+    "status": "completed"
+  },
+  {
+    "content": "Build check + mandatory testing agent verification (11/11 passed)",
     "status": "completed"
   }
 ]

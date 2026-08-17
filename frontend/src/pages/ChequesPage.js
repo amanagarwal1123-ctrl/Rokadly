@@ -1,7 +1,8 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useState } from "react";
 import { api, errMsg } from "@/lib/api";
 import { useApp } from "@/context/AppContext";
-import { Money, StatusBadge, EmptyState } from "@/components/shared";
+import { useAsyncData } from "@/hooks/useAsyncData";
+import { Money, StatusBadge, EmptyState, LoadErrorState } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,7 +22,6 @@ export default function ChequesPage() {
   const { user, today } = useApp();
   const [status, setStatus] = useState("all");
   const [search, setSearch] = useState("");
-  const [cheques, setCheques] = useState([]);
   const [target, setTarget] = useState(null);
   const [newStatus, setNewStatus] = useState("passed");
   const [statusDate, setStatusDate] = useState(today);
@@ -30,11 +30,12 @@ export default function ChequesPage() {
   const canManage = (c) => user.role === "admin" ||
     (user.role === "manager" && user.manager_permissions?.[c.store_id]?.manage_cheques);
 
-  const load = useCallback(() => {
-    api.get("/cheques", { params: { status, search: search || undefined } })
-      .then((r) => setCheques(r.data.cheques)).catch((e) => toast.error(errMsg(e)));
-  }, [status, search]);
-  useEffect(() => { load(); }, [load]);
+  const q = useAsyncData(
+    () => api.get("/cheques", { params: { status, search: search || undefined } }).then((r) => r.data.cheques),
+    [status, search]
+  );
+  const cheques = q.data || [];
+  const load = q.refresh;
 
   const applyStatus = async () => {
     if (newStatus !== "pending" && !statusDate) { toast.error("Date required"); return; }
@@ -76,7 +77,9 @@ export default function ChequesPage() {
               <TableHead>Age</TableHead><TableHead>Status</TableHead><TableHead className="w-[90px]"></TableHead>
             </TableRow></TableHeader>
             <TableBody>
-              {cheques.length === 0 && <TableRow><TableCell colSpan={8}><EmptyState icon={BookOpen} title="No cheques" /></TableCell></TableRow>}
+              {q.error && <TableRow><TableCell colSpan={8}><LoadErrorState error={q.error} onRetry={q.reload} title="Could not load cheques" /></TableCell></TableRow>}
+              {q.loading && <TableRow><TableCell colSpan={8} className="text-center py-8 text-sm text-muted-foreground animate-pulse">Loading…</TableCell></TableRow>}
+              {!q.loading && !q.error && cheques.length === 0 && <TableRow><TableCell colSpan={8}><EmptyState icon={BookOpen} title="No cheques" /></TableCell></TableRow>}
               {cheques.map((c) => (
                 <TableRow key={c.id} className={c.status === "bounced" ? "bg-[hsl(var(--danger))]/8" : ""} data-testid={`cheque-row-${c.cheque_no}`}>
                   <TableCell className="font-mono-num font-semibold">{c.cheque_no}</TableCell>

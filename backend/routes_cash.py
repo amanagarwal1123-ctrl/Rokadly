@@ -11,6 +11,17 @@ from core import (db, new_id, now_utc, today_ist, clean, audit, get_current_user
 router = APIRouter()
 
 
+# ---------------- Store-day status (shared day-lock source) ----------------
+
+@router.get("/store-day")
+async def store_day_status(store_id: str, business_date: str,
+                           user: dict = Depends(get_current_user)):
+    """Lightweight authorized store-day status for the frontend day-lock hook."""
+    require_store_access(user, store_id)
+    sd = await get_store_day(store_id, business_date)
+    return {"store_day": sd}
+
+
 # ---------------- Opening allocations ----------------
 
 class AllocationIn(BaseModel):
@@ -92,7 +103,11 @@ async def opening_adjustment(payload: OpeningAdjIn, user: dict = Depends(get_cur
         raise HTTPException(403, "Only admin can approve opening adjustments")
     if not payload.reason.strip():
         raise HTTPException(400, "Reason is compulsory")
+    if payload.amount_paise == 0:
+        raise HTTPException(400, "Adjustment cannot be zero")
     sd = await ensure_day_open(payload.store_id, payload.business_date)
+    if sd["opening_paise"] + payload.amount_paise < 0:
+        raise HTTPException(400, "Adjustment would make the effective opening negative")
     adj = {"amount_paise": payload.amount_paise, "reason": payload.reason.strip(),
            "approved_by": user["id"], "approved_by_name": user["name"], "at": now_utc()}
     await db.store_days.update_one({"id": sd["id"]}, {"$set": {"opening_adjustment": adj}})
@@ -159,10 +174,14 @@ async def submit_cash_count(payload: CashCountIn, user: dict = Depends(get_curre
     if variance != 0:
         dtype = "shortage" if variance < 0 else "excess"
         if disc:
-            await db.discrepancies.update_one({"id": disc["id"]}, {"$set": {
+            upd = {
                 "amount_paise": abs(variance), "type": dtype, "note": payload.note,
                 "original": {"expected_paise": expected, "counted_paise": payload.counted_paise,
-                             "variance_paise": variance}}})
+                             "variance_paise": variance}}
+            # a variance re-appearing on resubmission reopens an auto-closed discrepancy
+            if disc.get("status") == "closed_unexplained" and not disc.get("settlements"):
+                upd["status"] = "open"
+            await db.discrepancies.update_one({"id": disc["id"]}, {"$set": upd})
         else:
             d = {"id": new_id(), "store_id": payload.store_id,
                  "business_date": payload.business_date, "type": dtype,

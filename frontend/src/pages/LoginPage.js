@@ -144,7 +144,7 @@ export default function LoginPage() {
                   autoComplete="current-password" className="h-11" data-testid="login-password-input" />
               </div>
               <Button type="submit" disabled={busy || !username || !password}
-                className="w-full h-11 bg-[hsl(var(--ruby))] hover:bg-[hsl(350_78%_40%)] text-white font-semibold shadow-[0_4px_20px_hsl(350_78%_46%/0.3)]"
+                className="w-full h-11 bg-primary hover:bg-[hsl(var(--sapphire-2))] text-primary-foreground font-semibold shadow-[0_4px_20px_hsl(210_78%_56%/0.25)]"
                 data-testid="login-form-submit-button">
                 {busy ? "Signing in…" : "Sign in"}
               </Button>

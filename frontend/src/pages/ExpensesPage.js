@@ -1,7 +1,8 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import { api, errMsg, toPaise, fromPaise } from "@/lib/api";
 import { useApp } from "@/context/AppContext";
-import { Money, MoneyInput, StatusBadge, StoreDatePicker, EmptyState, SectionTitle } from "@/components/shared";
+import { useAsyncData, useStoreDayLock } from "@/hooks/useAsyncData";
+import { Money, MoneyInput, StatusBadge, StoreDatePicker, EmptyState, SectionTitle, DayLockBanner, LoadErrorState, LoadingState } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,17 +32,27 @@ export default function ExpensesPage() {
   const [report, setReport] = useState(null);
   const [range, setRange] = useState({ from: effDate, to: effDate });
 
-  const load = useCallback(() => {
-    if (!effStore || !effDate) return;
-    api.get("/expenses", { params: { store_id: effStore, business_date: effDate } })
-      .then((r) => setExpenses(r.data.expenses)).catch(() => {});
+  const { storeDay, locked, refresh: refreshLock } = useStoreDayLock(effStore, effDate);
+
+  const q = useAsyncData(
+    () => {
+      if (!effStore || !effDate) return Promise.resolve(null);
+      return api.get("/expenses", { params: { store_id: effStore, business_date: effDate } })
+        .then((r) => r.data.expenses);
+    },
+    [effStore, effDate]
+  );
+  useEffect(() => { setExpenses(q.data || []); }, [q.data]);
+  useEffect(() => {
+    if (!effStore) return;
     api.get("/heads", { params: { kind: "expense", store_id: effStore } })
       .then((r) => setHeads(r.data.heads)).catch(() => {});
-  }, [effStore, effDate]);
-  useEffect(() => { load(); }, [load]);
+  }, [effStore]);
+  const load = () => { q.refresh(); refreshLock(); };
   useEffect(() => { setRange({ from: effDate, to: effDate }); }, [effDate]);
 
   const save = async () => {
+    if (locked) { toast.error("This business date is finalized and locked"); return; }
     if (!form.description.trim()) { toast.error("Description is required"); return; }
     if (!toPaise(form.amount)) { toast.error("Amount is required"); return; }
     const body = {
@@ -49,7 +60,7 @@ export default function ExpensesPage() {
       voucher_status: form.voucher_status, head_id: form.head_id || null,
       description: form.description, payment_type: form.payment_type,
       bank_id: form.payment_type === "bank" ? form.bank_id : null,
-      voucher_no: form.voucher_no || null,
+      voucher_no: form.voucher_status === "with_voucher" ? (form.voucher_no || null) : null,
     };
     if (user.role === "admin") { body.store_id = effStore; body.business_date = effDate; }
     try {
@@ -148,7 +159,8 @@ export default function ExpensesPage() {
         </TabsList>
 
         <TabsContent value="entries" className="space-y-4 mt-4">
-          {canEnter && (
+          <DayLockBanner storeDay={storeDay} />
+          {canEnter && !locked && (
             <Card className="rounded-lg">
               <CardContent className="p-4 grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 <div className="space-y-1.5">
@@ -167,7 +179,8 @@ export default function ExpensesPage() {
                 </div>
                 <div className="space-y-1.5">
                   <Label>Voucher</Label>
-                  <Select value={form.voucher_status} onValueChange={(v) => setForm({ ...form, voucher_status: v })}>
+                  <Select value={form.voucher_status}
+                    onValueChange={(v) => setForm({ ...form, voucher_status: v, voucher_no: v === "with_voucher" ? form.voucher_no : "" })}>
                     <SelectTrigger data-testid="expense-voucher-select"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="with_voucher">With Voucher</SelectItem>
@@ -175,10 +188,12 @@ export default function ExpensesPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-1.5">
-                  <Label>Voucher No</Label>
-                  <Input value={form.voucher_no} onChange={(e) => setForm({ ...form, voucher_no: e.target.value })} data-testid="expense-voucher-no-input" />
-                </div>
+                {form.voucher_status === "with_voucher" && (
+                  <div className="space-y-1.5">
+                    <Label>Voucher No</Label>
+                    <Input value={form.voucher_no} onChange={(e) => setForm({ ...form, voucher_no: e.target.value })} data-testid="expense-voucher-no-input" />
+                  </div>
+                )}
                 <div className="space-y-1.5">
                   <Label>Payment</Label>
                   <Select value={form.payment_type} onValueChange={(v) => setForm({ ...form, payment_type: v })}>
@@ -206,7 +221,7 @@ export default function ExpensesPage() {
                   </Select>
                   <div className="flex gap-1.5">
                     <Input value={newHead} onChange={(e) => setNewHead(e.target.value)} placeholder="New head…" className="h-8 text-xs" data-testid="expense-new-head-input" />
-                    <Button variant="outline" size="sm" className="h-8" onClick={addHead} data-testid="expense-add-head-button"><Plus className="h-3 w-3" /></Button>
+                    <Button variant="outline" size="sm" className="h-8" onClick={addHead} aria-label="Add new head" title="Add new head" data-testid="expense-add-head-button"><Plus className="h-3 w-3" /></Button>
                   </div>
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">
@@ -214,7 +229,7 @@ export default function ExpensesPage() {
                   <Input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} data-testid="expense-description-input" />
                 </div>
                 <div className="flex items-end sm:col-span-2 lg:col-span-4">
-                  <Button onClick={save} className="bg-[hsl(var(--ruby))] hover:bg-[hsl(var(--ruby))]/90" data-testid="expense-save-button">
+                  <Button onClick={save} className="bg-primary hover:bg-[hsl(var(--sapphire-2))]" data-testid="expense-save-button">
                     {form.editing ? "Update expense" : "Save expense"}
                   </Button>
                   {form.editing && (
@@ -225,6 +240,11 @@ export default function ExpensesPage() {
             </Card>
           )}
 
+          {q.error ? (
+            <LoadErrorState error={q.error} onRetry={q.reload} title="Could not load expenses" />
+          ) : q.loading ? (
+            <Card className="rounded-lg"><CardContent className="p-4"><LoadingState /></CardContent></Card>
+          ) : (
           <Card className="rounded-lg overflow-hidden">
             <div className="overflow-x-auto">
               <Table className="table-compact">
@@ -244,7 +264,7 @@ export default function ExpensesPage() {
                       <TableCell className="amount-cell"><Money paise={x.amount_paise} /></TableCell>
                       <TableCell>{x.status === "void" ? <StatusBadge status="void" /> : <StatusBadge status={x.review_status === "finalized" ? "finalized" : x.review_status === "reviewed" ? "reviewed" : "unreviewed"} label={x.review_status === "unreviewed" ? "Unreviewed" : undefined} />}</TableCell>
                       <TableCell>
-                        {x.status === "active" && (
+                        {x.status === "active" && !locked && (
                           <div className="flex gap-1 justify-end">
                             {["accountant", "admin"].includes(user.role) && x.review_status === "unreviewed" && (
                               <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => review(x.id, "review")} data-testid={`expense-review-${x.id.slice(0, 6)}`}>Review</Button>
@@ -254,8 +274,9 @@ export default function ExpensesPage() {
                             )}
                             {x.review_status !== "finalized" && (x.cashier_id === user.id || user.role === "admin") && (
                               <>
-                                <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => startEdit(x)}>Edit</Button>
-                                <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-[hsl(var(--danger))]" onClick={() => setVoidTarget(x)} data-testid={`expense-void-${x.id.slice(0, 6)}`}><Ban className="h-3.5 w-3.5" /></Button>
+                                <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => startEdit(x)} aria-label="Edit expense" title="Edit expense">Edit</Button>
+                                <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-[hsl(var(--danger))]" onClick={() => setVoidTarget(x)}
+                                  aria-label="Void expense" title="Void expense" data-testid={`expense-void-${x.id.slice(0, 6)}`}><Ban className="h-3.5 w-3.5" /></Button>
                               </>
                             )}
                           </div>
@@ -267,6 +288,7 @@ export default function ExpensesPage() {
               </Table>
             </div>
           </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="report" className="space-y-4 mt-4">

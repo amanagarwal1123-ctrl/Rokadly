@@ -1,7 +1,8 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useState } from "react";
 import { api, errMsg, fmtINR, fmtDateTime } from "@/lib/api";
 import { useApp } from "@/context/AppContext";
-import { Money, StatusBadge, VerifiedTick, EmptyState } from "@/components/shared";
+import { useAsyncData } from "@/hooks/useAsyncData";
+import { Money, StatusBadge, VerifiedTick, EmptyState, LoadErrorState } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,15 +21,17 @@ export default function RegisterPage() {
   const weekAgo = new Date(Date.now() - 6 * 864e5).toISOString().slice(0, 10);
   const [range, setRange] = useState({ from: weekAgo, to: today });
   const [storeFilter, setStoreFilter] = useState("all");
-  const [rows, setRows] = useState(null);
 
-  const load = useCallback(() => {
-    if (!range.from || !range.to) return;
-    const params = { date_from: range.from, date_to: range.to };
-    if (storeFilter !== "all") params.store_id = storeFilter;
-    api.get("/reports/register", { params }).then((r) => setRows(r.data.rows)).catch((e) => toast.error(errMsg(e)));
-  }, [range, storeFilter]);
-  useEffect(() => { load(); }, [load]);
+  const q = useAsyncData(
+    () => {
+      if (!range.from || !range.to) return Promise.resolve(null);
+      const params = { date_from: range.from, date_to: range.to };
+      if (storeFilter !== "all") params.store_id = storeFilter;
+      return api.get("/reports/register", { params }).then((r) => r.data.rows);
+    },
+    [range.from, range.to, storeFilter]
+  );
+  const rows = q.data;
 
   const exportCsv = () => {
     if (!rows?.length) return;
@@ -95,7 +98,8 @@ export default function RegisterPage() {
               <TableHead>Finalized</TableHead>
             </TableRow></TableHeader>
             <TableBody>
-              {!rows && <TableRow><TableCell colSpan={15} className="text-center py-8 text-sm text-muted-foreground animate-pulse">Loading…</TableCell></TableRow>}
+              {q.error && <TableRow><TableCell colSpan={15}><LoadErrorState error={q.error} onRetry={q.reload} title="Could not load the register" /></TableCell></TableRow>}
+              {q.loading && <TableRow><TableCell colSpan={15} className="text-center py-8 text-sm text-muted-foreground animate-pulse">Loading…</TableCell></TableRow>}
               {rows?.length === 0 && <TableRow><TableCell colSpan={15}><EmptyState icon={BookMarked} title="No Rokad entries in range" /></TableCell></TableRow>}
               {rows?.map((r) => (
                 <TableRow key={`${r.store_id}-${r.business_date}`} data-testid={`register-row-${r.business_date}-${r.store_name?.replace(/\s+/g, "-").toLowerCase()}`}>

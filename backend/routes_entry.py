@@ -159,14 +159,18 @@ async def _sync_cheques(bill: dict, actor: dict):
 
 @router.get("/bills/check-duplicate")
 async def check_duplicate(store_id: str, business_date: str, bill_no: str,
+                          exclude_bill_id: Optional[str] = None,
                           user: dict = Depends(get_current_user)):
     require_store_access(user, store_id)
     norm = normalize_bill_no(bill_no)
-    existing = await db.bills.find_one(
-        {"store_id": store_id, "business_date": business_date, "bill_no_norm": norm,
-         "status": "active"}, {"_id": 0})
+    q: Dict[str, Any] = {"store_id": store_id, "business_date": business_date,
+                         "bill_no_norm": norm, "status": "active"}
+    if exclude_bill_id:
+        q["id"] = {"$ne": exclude_bill_id}
+    existing = await db.bills.find_one(q, {"_id": 0})
     if existing:
         return {"duplicate": True, "existing": {
+            "id": existing["id"],
             "bill_no": existing["bill_no"], "amount_paise": existing["amount_paise"],
             "cashier_name": existing.get("cashier_name"), "created_at": existing.get("created_at"),
             "customer_name": existing.get("customer_name")}}
@@ -564,6 +568,8 @@ async def create_expense(payload: ExpenseIn, user: dict = Depends(get_current_us
         raise HTTPException(400, "nature must be business_payment or operating")
     if payload.voucher_status not in ("with_voucher", "without_voucher"):
         raise HTTPException(400, "voucher_status invalid")
+    if payload.voucher_status == "without_voucher":
+        payload.voucher_no = None
     if payload.payment_type not in ("cash", "bank"):
         raise HTTPException(400, "Expense payment must be cash or bank")
     if not payload.description.strip():
@@ -620,7 +626,8 @@ async def update_expense(exp_id: str, payload: ExpenseUpdate, user: dict = Depen
         raise HTTPException(403, "Not permitted")
     await ensure_day_open(exp["store_id"], exp["business_date"])
     update = {"amount_paise": payload.amount_paise, "nature": payload.nature,
-              "voucher_status": payload.voucher_status, "voucher_no": payload.voucher_no,
+              "voucher_status": payload.voucher_status,
+              "voucher_no": payload.voucher_no if payload.voucher_status == "with_voucher" else None,
               "head_id": payload.head_id, "description": payload.description.strip(),
               "payment_type": payload.payment_type, "updated_at": now_utc()}
     if payload.payment_type == "bank":
@@ -675,6 +682,7 @@ async def review_expense(exp_id: str, payload: ReviewIn, user: dict = Depends(ge
     if not exp:
         raise HTTPException(404, "Not found")
     require_store_access(user, exp["store_id"])
+    await ensure_day_open(exp["store_id"], exp["business_date"])
     if payload.action == "review":
         if user["role"] not in ("accountant", "admin"):
             raise HTTPException(403, "Only accountant or admin can review expenses")

@@ -1,7 +1,8 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { api, errMsg } from "@/lib/api";
+import React, { useEffect, useState } from "react";
+import { api } from "@/lib/api";
 import { useApp } from "@/context/AppContext";
-import { Money, StatusBadge, EmptyState } from "@/components/shared";
+import { useAsyncData } from "@/hooks/useAsyncData";
+import { Money, StatusBadge, EmptyState, LoadErrorState, LoadingState } from "@/components/shared";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -13,15 +14,18 @@ import { toast } from "sonner";
 export default function CrossStorePage() {
   const { today } = useApp();
   const [range, setRange] = useState({ from: today, to: today });
-  const [groups, setGroups] = useState(null);
 
-  const load = useCallback(() => {
-    if (!range.from || !range.to) return;
-    api.get("/reports/cross-store", { params: { date_from: range.from, date_to: range.to } })
-      .then((r) => setGroups(r.data.groups)).catch((e) => toast.error(errMsg(e)));
-  }, [range]);
+  const q = useAsyncData(
+    () => {
+      if (!range.from || !range.to) return Promise.resolve(null);
+      return api.get("/reports/cross-store", { params: { date_from: range.from, date_to: range.to } })
+        .then((r) => r.data.groups);
+    },
+    [range.from, range.to]
+  );
+  const groups = q.data;
+  const load = q.reload;
   useEffect(() => { setRange({ from: today, to: today }); }, [today]);
-  useEffect(() => { load(); }, [load]);
 
   return (
     <div className="space-y-5">
@@ -39,6 +43,8 @@ export default function CrossStorePage() {
         </div>
       </div>
 
+      {q.error && <LoadErrorState error={q.error} onRetry={q.reload} title="Could not load cross-store receipts" />}
+      {q.loading && <LoadingState />}
       {groups?.length === 0 && <EmptyState icon={Building2} title="No bank receipts in range" />}
 
       {groups?.map((g) => (
