@@ -609,7 +609,7 @@ class RokadlyAPITester:
 
 def main():
     import os
-    backend_url = os.environ.get('REACT_APP_BACKEND_URL', 'https://daily-rokad.preview.emergentagent.com')
+    backend_url = os.environ.get('REACT_APP_BACKEND_URL', 'https://day-lock-live.preview.emergentagent.com')
     
     print(f"\n🚀 Starting Rokadly Backend API Tests")
     print(f"📍 Backend URL: {backend_url}")
